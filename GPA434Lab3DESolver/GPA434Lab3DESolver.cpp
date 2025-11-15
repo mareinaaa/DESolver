@@ -8,6 +8,11 @@
 #include "QDEControllerPanel.h"
 #include "QDEEngineParametersPanel.h"
 #include "QDEBestResultPanel.h"
+#include "qsplitter.h"
+#include "QDESolutionTabPanel.h"
+#include "QDESolutionPanel.h"
+#include "QDEHistoryChartPanel.h"
+
 
 GPA434Lab3DESolver::GPA434Lab3DESolver(QWidget *parent)
     : QMainWindow(parent)
@@ -33,7 +38,21 @@ GPA434Lab3DESolver::GPA434Lab3DESolver(QWidget *parent)
     parametersLayout->addWidget(bestResultPanel);
     parametersWidget->setLayout(parametersLayout);
 
-    mainLayout->addWidget(parametersWidget);
+    // RIGHT
+    QSplitter* panelSplitter = new QSplitter(this);
+    panelSplitter->setOrientation(Qt::Orientation::Vertical);
+
+    // One adapter or not? Same as controllerPanel, etc
+    QDESolutionTabPanel* solutionTabPanel = new QDESolutionTabPanel(*adapter, panelSplitter);
+    //QDESolutionPanel* solutionPanel = QDESolutionPanel; // classe abstraite
+    //solutionTanPanel->addSolutionPanel()
+
+    QDEHistoryChartPanel* historyChartPanel = new QDEHistoryChartPanel(*adapter, panelSplitter);
+
+
+
+    mainLayout->addWidget(parametersWidget, 1);
+    mainLayout->addWidget(panelSplitter, 3);
     mainWidget->setLayout(mainLayout);
 }
 
