@@ -16,27 +16,25 @@ GPA434Lab3DESolver::GPA434Lab3DESolver(QWidget *parent)
     setWindowIcon(QIcon(":/GPA434Lab3DESolver/dna-icon"));
 
     QWidget* mainWidget = new QWidget(this);
-    QHBoxLayout* mainLayout = new QHBoxLayout; 
+    setCentralWidget(mainWidget);
+
+    QHBoxLayout* mainLayout = new QHBoxLayout(mainWidget);
 
     QWidget* parametersWidget = new QWidget;
-    QVBoxLayout* parametersLayout = new QVBoxLayout;
+    QVBoxLayout* parametersLayout = new QVBoxLayout(parametersWidget);
 
     QDEAdapter* adapter = new QDEAdapter(this);
     QDEControllerPanel* controllerPanel = new QDEControllerPanel(*adapter, parametersWidget);
-    //QDEEngineParametersPanel engineParametersPanel = new QDEEngineParametersPanel();
-    //QDEBestResultPanel bestResultPanel = new QDEBestResultPanel();
+    QDEEngineParametersPanel* engineParametersPanel = new QDEEngineParametersPanel(*adapter, parametersWidget);
+    QDEBestResultPanel* bestResultPanel = new QDEBestResultPanel(*adapter, parametersWidget);
 
     parametersLayout->addWidget(controllerPanel);
-    controllerPanel->setLayout(parametersLayout);
+    parametersLayout->addWidget(engineParametersPanel);
+    parametersLayout->addWidget(bestResultPanel);
+    parametersWidget->setLayout(parametersLayout);
 
-    parametersWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    parametersWidget->setMinimumSize(1000, 1000);
-    controllerPanel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-    mainLayout->addWidget(controllerPanel);
-
+    mainLayout->addWidget(parametersWidget);
     mainWidget->setLayout(mainLayout);
-    setLayout(mainLayout);
 }
 
 GPA434Lab3DESolver::~GPA434Lab3DESolver()
