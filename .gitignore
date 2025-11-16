@@ -1043,3 +1043,17 @@ dkms.conf
 *.uf2
 # Raspberry Pi Pico disassembler file
 *.dis
+
+
+
+# Ignore build folders (both local and parent-level)
+x64/
+*/x64/
+../x64/
+Debug/
+Release/
+*.pdb
+*.ilk
+*.exe
+*.dll
+*.lib
