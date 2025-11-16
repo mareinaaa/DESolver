@@ -11,5 +11,7 @@ public:
     ~GPA434Lab3DESolver() override;
 
 private:
-
+    void setupGUI(); // Orientation, range
+    void assemblingAndLayouting(); // add
+    void establishConnections();
 };
