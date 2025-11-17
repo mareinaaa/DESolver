@@ -19,40 +19,49 @@ GPA434Lab3DESolver::GPA434Lab3DESolver(QWidget *parent)
     setWindowTitle("Differential Evolution Solver");
     setWindowIcon(QIcon(":/GPA434Lab3DESolver/dna-icon"));
 
-    QWidget* mainWidget = new QWidget(this);
-    setCentralWidget(mainWidget);
+    QWidget* mMainWidget = new QWidget(this);
+    setCentralWidget(mMainWidget);
+
+    mAdapter = new QDEAdapter(this);
+
+    mParametersWidget = new QWidget;
+    mControllerPanel = new QDEControllerPanel(*mAdapter, mParametersWidget);
+    mEngineParametersPanel = new QDEEngineParametersPanel(*mAdapter, mParametersWidget);
+    mBestResultPanel = new QDEBestResultPanel(*mAdapter, mParametersWidget);
+
+    mPanelSplitter = new QSplitter(Qt::Orientation::Vertical,mMainWidget);
+    mSolutionTabPanel = new QDESolutionTabPanel(*mAdapter, mPanelSplitter);
+    mHistoryChartPanel = new QDEHistoryChartPanel(*mAdapter, mPanelSplitter);
+
+    setupGUI();
+}
+
+void GPA434Lab3DESolver::setupGUI()
+{
+    QWidget* mainWidget = centralWidget();
 
     QHBoxLayout* mainLayout = new QHBoxLayout(mainWidget);
-
-    QWidget* parametersWidget = new QWidget;
-    QVBoxLayout* parametersLayout = new QVBoxLayout(parametersWidget);
-
-    QDEAdapter* adapter = new QDEAdapter(this);
-    QDEControllerPanel* controllerPanel = new QDEControllerPanel(*adapter, parametersWidget);
-    QDEEngineParametersPanel* engineParametersPanel = new QDEEngineParametersPanel(*adapter, parametersWidget);
-    QDEBestResultPanel* bestResultPanel = new QDEBestResultPanel(*adapter, parametersWidget);
-
-    parametersLayout->addWidget(controllerPanel);
-    parametersLayout->addWidget(engineParametersPanel);
-    parametersLayout->addWidget(bestResultPanel);
-    parametersWidget->setLayout(parametersLayout);
-
-    parametersWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    QVBoxLayout* parametersLayout = new QVBoxLayout(mParametersWidget);
 
 
+    parametersLayout->addWidget(mControllerPanel);
+    parametersLayout->addWidget(mEngineParametersPanel);
+    parametersLayout->addWidget(mBestResultPanel);
+    mParametersWidget->setLayout(parametersLayout);
 
-    QSplitter* panelSplitter = new QSplitter(Qt::Orientation::Vertical,mainWidget);
-    QDESolutionTabPanel* solutionTabPanel = new QDESolutionTabPanel(*adapter, panelSplitter);
-    QDEHistoryChartPanel* historyChartPanel = new QDEHistoryChartPanel(*adapter, panelSplitter);
+    mParametersWidget->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding));
 
-    /*panelSplitter->addWidget(solutionTabPanel);
-    panelSplitter->addWidget(historyChartPanel);*/
-    panelSplitter->setStretchFactor(0, 60);
-    panelSplitter->setStretchFactor(1, 1);
+    //mPanelSplitter->addWidget(mSolutionTabPanel);
+    //mPanelSplitter->addWidget(mHistoryChartPanel);
+    mPanelSplitter->setStretchFactor(0, 60);
+    mPanelSplitter->setStretchFactor(1, 1);
 
-    mainLayout->addWidget(parametersWidget);
-    mainLayout->addWidget(panelSplitter);
+
+    mainLayout->addWidget(mParametersWidget);
+    mainLayout->addWidget(mPanelSplitter);
     mainWidget->setLayout(mainLayout);
+
+
 }
 
 GPA434Lab3DESolver::~GPA434Lab3DESolver()
