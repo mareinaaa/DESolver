@@ -29,7 +29,12 @@ GPA434Lab3DESolver::GPA434Lab3DESolver(QWidget* parent)
 
     setupGUI();
     assemblingAndLayouting();
+    establishConnections();
 }
+
+GPA434Lab3DESolver::~GPA434Lab3DESolver(){}
+
+
 
 void GPA434Lab3DESolver::setupGUI()
 {
@@ -59,6 +64,22 @@ void GPA434Lab3DESolver::assemblingAndLayouting()
     mainWidget->setLayout(mainLayout);
 }
 
-GPA434Lab3DESolver::~GPA434Lab3DESolver()
+void GPA434Lab3DESolver::establishConnections()
 {
+    //connect(  const typename QtPrivate::FunctionPointer<Func1>::Object * sender, 
+    //          Func1 signal,
+    //          const typename QtPrivate::ContextTypeForFunctor<Func2>::ContextType * context, 
+    //          Func2 && slot,
+    //          Qt::ConnectionType type = Qt::AutoConnection)
+
+    connect(mEngineParametersPanel, &QDEEngineParametersPanel::parameterChanged,    mControllerPanel,       &QDEControllerPanel::resetSimulation);
+    connect(mEngineParametersPanel, &QDEEngineParametersPanel::parameterChanged,    mSolutionTabPanel,      &QDESolutionTabPanel::updateVisualization);
+
+    connect(mSolutionTabPanel,      &QDESolutionTabPanel::solutionChanged,          mEngineParametersPanel, &QDEEngineParametersPanel::setParametersFromSolution);
+    connect(mSolutionTabPanel,      &QDESolutionTabPanel::solutionChanged,          mControllerPanel,       &QDEControllerPanel::resetSimulation);
+
+    connect(mControllerPanel,       &QDEControllerPanel::evolutionStarted,          mEngineParametersPanel, &QDEEngineParametersPanel::disable);
+    connect(mControllerPanel,       &QDEControllerPanel::evolutionStopped,          mEngineParametersPanel, &QDEEngineParametersPanel::enable);
+    connect(mControllerPanel,       &QDEControllerPanel::evolutionStarted,          mSolutionTabPanel,      &QDESolutionTabPanel::disable);
+    connect(mControllerPanel,       &QDEControllerPanel::evolutionStopped,          mSolutionTabPanel,      &QDESolutionTabPanel::enable);
 }
