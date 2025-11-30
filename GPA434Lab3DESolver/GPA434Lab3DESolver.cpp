@@ -12,17 +12,20 @@
 #include "QDESolutionTabPanel.h"
 #include "QDESolutionPanel.h"
 #include "QDEHistoryChartPanel.h"
+#include "QDEPeakPanel.h"
+#include "QDEOpenBoxPanel.h"
+#include "QDEGeometricOptimisationPanel.h"
 
 GPA434Lab3DESolver::GPA434Lab3DESolver(QWidget* parent)
     : QMainWindow(parent)
     , mAdapter{ new QDEAdapter(this) }
     , mParametersWidget{ new QWidget }
-    , mControllerPanel{ new QDEControllerPanel(*mAdapter, this) }
-    , mEngineParametersPanel{ new QDEEngineParametersPanel(*mAdapter, this) }
-    , mBestResultPanel{ new QDEBestResultPanel(*mAdapter, mParametersWidget) }
+    , mControllerPanel{ new QDEControllerPanel(mAdapter, this) }
+    , mEngineParametersPanel{ new QDEEngineParametersPanel(mAdapter, this) }
+    , mBestResultPanel{ new QDEBestResultPanel(mAdapter, mParametersWidget) }
     , mPanelSplitter{ new QSplitter(Qt::Orientation::Vertical, this) }
-    , mSolutionTabPanel{ new QDESolutionTabPanel(*mAdapter, this) }
-    , mHistoryChartPanel{ new QDEHistoryChartPanel(*mAdapter, this) }
+    , mSolutionTabPanel{ new QDESolutionTabPanel(mAdapter, this) }
+    , mHistoryChartPanel{ new QDEHistoryChartPanel(mAdapter, this) }
 {
     setWindowTitle("Differential Evolution Solver");
     setWindowIcon(QIcon(":/GPA434Lab3DESolver/dna-icon"));
@@ -30,6 +33,7 @@ GPA434Lab3DESolver::GPA434Lab3DESolver(QWidget* parent)
     setupGUI();
     assemblingAndLayouting();
     establishConnections();
+    addSolution();
 }
 
 GPA434Lab3DESolver::~GPA434Lab3DESolver(){}
@@ -56,8 +60,8 @@ void GPA434Lab3DESolver::assemblingAndLayouting()
 
     mPanelSplitter->addWidget(mSolutionTabPanel);
     mPanelSplitter->addWidget(mHistoryChartPanel);
-    mPanelSplitter->setStretchFactor(0, 60);
-    mPanelSplitter->setStretchFactor(1, 1);
+    mPanelSplitter->setStretchFactor(0, 2);
+    mPanelSplitter->setStretchFactor(1, 3);
 
     mainLayout->addWidget(mParametersWidget, 1);
     mainLayout->addWidget(mPanelSplitter, 4);
@@ -72,14 +76,21 @@ void GPA434Lab3DESolver::establishConnections()
     //          Func2 && slot,
     //          Qt::ConnectionType type = Qt::AutoConnection)
 
-    connect(mEngineParametersPanel, &QDEEngineParametersPanel::parameterChanged,    mControllerPanel,       &QDEControllerPanel::resetSimulation);
-    connect(mEngineParametersPanel, &QDEEngineParametersPanel::parameterChanged,    mSolutionTabPanel,      &QDESolutionTabPanel::updateVisualization);
+    connect(mEngineParametersPanel, &QDEEngineParametersPanel::parameterChanged, mControllerPanel, &QDEControllerPanel::resetSimulation);
+    connect(mEngineParametersPanel, &QDEEngineParametersPanel::parameterChanged, mSolutionTabPanel, &QDESolutionTabPanel::updateVisualization);
 
-    connect(mSolutionTabPanel,      &QDESolutionTabPanel::solutionChanged,          mEngineParametersPanel, &QDEEngineParametersPanel::setParametersFromSolution);
-    connect(mSolutionTabPanel,      &QDESolutionTabPanel::solutionChanged,          mControllerPanel,       &QDEControllerPanel::resetSimulation);
+    connect(mSolutionTabPanel, &QDESolutionTabPanel::solutionChanged, mEngineParametersPanel, &QDEEngineParametersPanel::setParametersFromSolution);
+    connect(mSolutionTabPanel, &QDESolutionTabPanel::solutionChanged, mControllerPanel, &QDEControllerPanel::resetSimulation);
 
-    connect(mControllerPanel,       &QDEControllerPanel::evolutionStarted,          mEngineParametersPanel, &QDEEngineParametersPanel::disable);
-    connect(mControllerPanel,       &QDEControllerPanel::evolutionStopped,          mEngineParametersPanel, &QDEEngineParametersPanel::enable);
-    connect(mControllerPanel,       &QDEControllerPanel::evolutionStarted,          mSolutionTabPanel,      &QDESolutionTabPanel::disable);
-    connect(mControllerPanel,       &QDEControllerPanel::evolutionStopped,          mSolutionTabPanel,      &QDESolutionTabPanel::enable);
+    connect(mControllerPanel, &QDEControllerPanel::evolutionStarted, mEngineParametersPanel, &QDEEngineParametersPanel::disable);
+    connect(mControllerPanel, &QDEControllerPanel::evolutionStopped, mEngineParametersPanel, &QDEEngineParametersPanel::enable);
+    connect(mControllerPanel, &QDEControllerPanel::evolutionStarted, mSolutionTabPanel, &QDESolutionTabPanel::disable);
+    connect(mControllerPanel, &QDEControllerPanel::evolutionStopped, mSolutionTabPanel, &QDESolutionTabPanel::enable);
+}
+
+void GPA434Lab3DESolver::addSolution()
+{
+    mSolutionTabPanel->addSolutionPanel(new QDEPeakPanel());
+    mSolutionTabPanel->addSolutionPanel(new QDEOpenBoxPanel());
+    mSolutionTabPanel->addSolutionPanel(new QDEGeometricOptimisationPanel());
 }

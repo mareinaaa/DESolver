@@ -111,10 +111,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Polygon.cpp" />
+    <ClCompile Include="Polygon.h" />
     <ClCompile Include="QDEAdapter.cpp" />
     <ClCompile Include="QDEBestResultPanel.cpp" />
     <ClCompile Include="QDEControllerPanel.cpp" />
     <ClCompile Include="QDEEngineParametersPanel.cpp" />
+    <ClCompile Include="QDEGeometricOptimisationPanel.cpp">
+      <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">input</DynamicSource>
+      <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(Filename).moc</QtMocFileName>
+      <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Release|x64'">input</DynamicSource>
+      <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(Filename).moc</QtMocFileName>
+    </ClCompile>
     <ClCompile Include="QDEHistoryChartPanel.cpp" />
     <ClCompile Include="QDEOpenBoxPanel.cpp" />
     <ClCompile Include="QDEPeakPanel.cpp" />
@@ -159,6 +167,9 @@
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QImageViewer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="QDEGeometricOptimisationPanel.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

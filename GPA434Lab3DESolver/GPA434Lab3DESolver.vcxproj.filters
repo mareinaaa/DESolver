@@ -31,6 +31,12 @@
     <Filter Include="Header Files\WidgetUtilities">
       <UniqueIdentifier>{bc7fac40-9eeb-471b-8de4-a94d753f0ffb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Components">
+      <UniqueIdentifier>{5e1c9ba2-10e5-4ab8-b291-5287ae4f06e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Components">
+      <UniqueIdentifier>{48625a2d-5c25-4fc9-a7fd-fa96976c8437}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="GPA434Lab3DESolver.qrc">
@@ -80,6 +86,15 @@
     <ClCompile Include="QDEAdapter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="QDEGeometricOptimisationPanel.cpp">
+      <Filter>Source Files\ProblemToSolveSubPanels</Filter>
+    </ClCompile>
+    <ClCompile Include="Polygon.h">
+      <Filter>Header Files\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Polygon.cpp">
+      <Filter>Source Files\Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QImageViewer.h">
@@ -114,6 +129,9 @@
     </QtMoc>
     <QtMoc Include="QDEAdapter.h">
       <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="QDEGeometricOptimisationPanel.h">
+      <Filter>Header Files\ProblemToSolveSubPanels</Filter>
     </QtMoc>
   </ItemGroup>
 </Project>
