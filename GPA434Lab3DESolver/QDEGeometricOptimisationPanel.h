@@ -1,7 +1,6 @@
 #pragma once
-#ifndef QDEGEOMETRICOPTIMISATIONPANEL_H
-#define QDEGEOMETRICOPTIMISATIONPANEL_H
-
+//#ifndef QDEGEOMETRICOPTIMISATIONPANEL_H
+//#define QDEGEOMETRICOPTIMISATIONPANEL_H
 #include "QDESolutionPanel.h"
 #include <SolutionStrategy.h>
 
@@ -31,6 +30,8 @@ public:
     QDEGeometricOptimisationPanel& operator=(QDEGeometricOptimisationPanel&&) = default;
     ~QDEGeometricOptimisationPanel() override = default;
 
+    // Box dimensions getter ??? GETTERS
+
     // QDESolutionPanel interface : retourne la stratégie pour ce problème
     de::SolutionStrategy* buildSolution() const override;
 
@@ -42,10 +43,11 @@ private:
     enum class polygoneMode { Regular, Convex, Star };
 
     //Widgets 
-    QImageViewer* mCanvasView{};
-    QScrollBar* mObstacleScroll{};
-    QScrollBar* mVertexScroll{};
-    QComboBox* mShapeCombo{};
+    QImageViewer* mVisualizationLabel;
+    QScrollBar* mObstacleScrollBar;
+    QScrollBar* mVertexScrollBar;
+    QComboBox* mShapeComboBox;
+    //QPushButton* regenerateButton;
 
     // Données de visualisation
     QRectF         mCanvasRect;
@@ -62,7 +64,7 @@ private:
     QVector<Polygon*> mPolygones;
 
     // Construction d'une ligne "scrollbar + étiquette"
-    QHBoxLayout* buildScrollBarLayout(QScrollBar*& sb, int min, int max,
+    QWidget* buildScrollBarWidget(QScrollBar*& sb, int min, int max,
         int defValue, QString const& suffix = QString());
 
     void updateCanvasRect();
@@ -72,12 +74,13 @@ private:
     void regenerateObstacles();  // Recréation aléatoire des obstacles
     void rebuildPolygons();      // Reconstruit les 3 formes (régulier, convexe, étoile)
     void drawPreview();          // Affiche uniquement la forme de base centrée
+    void establishConnections();
 
     // Stratégie de solution interne
     class geometricOptimisationStrategy;
 
     // Description texte du problème (HTML)
-    static const QString sDescription;
+    static const QString gop_description;
 };
 
 
@@ -109,4 +112,4 @@ private:
     QPolygonF      mBasePolygon;
 };
 
-#endif // QDEGEGEOMETRICOPTIMISATIONPANEL_H
+//#endif // QDEGEGEOMETRICOPTIMISATIONPANEL_H
