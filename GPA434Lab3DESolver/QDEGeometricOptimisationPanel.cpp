@@ -3,28 +3,25 @@
 #include "QImageViewer.h"
 #include "Polygon.h"
 
-#include <QFrame>
 #include <QGroupBox>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
-#include <QScrollBar>
-#include <QComboBox>
 #include <QLabel>
 #include <QPainter>
 #include <QPixmap>
 #include <QRandomGenerator>
-#include <QtMath>
-#include <QPushButton>
+#include <QtMath> /// COULD REMOVE
 #include <QTimer>
 
 
 QDEGeometricOptimisationPanel::QDEGeometricOptimisationPanel(QWidget* parent)
     : QDESolutionPanel(parent)
     , mVisualizationLabel{ new QImageViewer }
-    , mObstacleScrollBar{ nullptr }
-    , mVertexScrollBar{ nullptr }
+    , mObstacleScrollBar{ new QScrollBar }
+    , mVertexScrollBar{ new QScrollBar }
     , mShapeComboBox{ new QComboBox }
+    , regenerateButton { new QPushButton }
     , mCanvasRect{}
     , mCanvasColor(21, 23, 43)
     , mObstacleColor(90, 96, 120)
@@ -38,7 +35,8 @@ QDEGeometricOptimisationPanel::QDEGeometricOptimisationPanel(QWidget* parent)
     // 
     QHBoxLayout* obstaclesLayout{ new QHBoxLayout };
     obstaclesLayout->addWidget(buildScrollBarWidget(mObstacleScrollBar, 0, 360, 120, " "));
-    QPushButton* regenerateButton{ new QPushButton("Regenerer") };
+    //QPushButton* regenerateButton{ new QPushButton("Regenerer") };
+    regenerateButton->setText(QString("Regenerer"));
     obstaclesLayout->addWidget(regenerateButton);
     parameterLayout->addRow("Nombre d'obstacles", obstaclesLayout);
 
@@ -69,39 +67,13 @@ QDEGeometricOptimisationPanel::QDEGeometricOptimisationPanel(QWidget* parent)
     // --------------------------------------------------------------
     // Connexions
     // --------------------------------------------------------------
+    establishConnections();
 
-    // Scrollbar d'obstacles : met a jour la valeur et signale un changement
-    /*connect(mObstacleScrollBar, &QScrollBar::valueChanged,
-        obstacleLabel, static_cast<void(QLabel::*)(int)>(&QLabel::setNum));*/
-    connect(mObstacleScrollBar, &QScrollBar::valueChanged,
-        this, &QDESolutionPanel::parameterChanged);
-
-    // Scrollbar de sommets + combo
-    connect(mVertexScrollBar, &QScrollBar::valueChanged,
-        this, &QDESolutionPanel::parameterChanged);
-    connect(mShapeComboBox, &QComboBox::currentIndexChanged,
-        this, &QDESolutionPanel::parameterChanged);
-
-    // Obstacles : ne se regenerent que sur clic du bouton
-    connect(regenerateButton, &QPushButton::clicked,
-        this, &QDEGeometricOptimisationPanel::regenerateObstacles);
-
-    // Polygones : se reconstruisent lorsque le nombre de sommets ou le type change
-    connect(mVertexScrollBar, &QScrollBar::valueChanged,
-        this, &QDEGeometricOptimisationPanel::rebuildPolygons);
-    connect(mShapeComboBox, &QComboBox::currentIndexChanged,
-        this, &QDEGeometricOptimisationPanel::rebuildPolygons);
-
-    // Redessiner automatiquement lorsque le canevas est redimensionn?
-    connect(mVisualizationLabel, &QImageViewer::resized,
-        this, [this]()
-        {
-            updateCanvasRect();
-            drawPreview();
-        });
 
     // Initialisation differ?e pour avoir la taille finale du canevas
-    QTimer::singleShot(0, this, [this]()
+    // "Run this code after the event loop returns, once the layout has been applied and the widget has a valid size."
+    QTimer::singleShot(0, this, 
+        [this]()
         {
             updateCanvasRect();
             regenerateObstacles();
@@ -110,15 +82,17 @@ QDEGeometricOptimisationPanel::QDEGeometricOptimisationPanel(QWidget* parent)
 }
 
 /// MARIA ADDED -----------------------------------------
-//double QDEOpenBoxPanel::boxWidth() const
-//{
-//    return static_cast<double>(mWidthScrollBar->value());
-//}
-//
-//double QDEOpenBoxPanel::boxHeight() const
-//{
-//    return static_cast<double>(mHeightScrollBar->value());
-//}
+
+double QDEGeometricOptimisationPanel::obstacleCount() const
+{
+    return static_cast<double>(mObstacleScrollBar->value());
+}
+
+double QDEGeometricOptimisationPanel::vertexCount() const
+{
+    return static_cast<double>(mVertexScrollBar->value());
+}
+
 //
 //de::SolutionStrategy* QDEOpenBoxPanel::buildSolution() const
 //{
@@ -137,7 +111,6 @@ QWidget* QDEGeometricOptimisationPanel::buildScrollBarWidget(
     QWidget* widget = new QWidget();
     QHBoxLayout* layout{ new QHBoxLayout(widget)};
 
-    sb = new QScrollBar;
     sb->setOrientation(Qt::Horizontal);
     sb->setRange(minValue, maxValue);
     sb->setValue(defValue);
@@ -159,51 +132,84 @@ QWidget* QDEGeometricOptimisationPanel::buildScrollBarWidget(
     return widget;
 }
 
+
+void QDEGeometricOptimisationPanel::establishConnections()
+{
+
+    connect(mObstacleScrollBar, &QScrollBar::valueChanged, this, &QDESolutionPanel::parameterChanged);
+    connect(mVertexScrollBar, &QScrollBar::valueChanged, this, &QDESolutionPanel::parameterChanged);
+    connect(mShapeComboBox, &QComboBox::currentIndexChanged, this, &QDESolutionPanel::parameterChanged);
+
+    // Obstacles : ne se regenerent que sur clic du bouton
+    connect(regenerateButton, &QPushButton::clicked, this, &QDEGeometricOptimisationPanel::regenerateObstacles);
+
+    // Polygones : se reconstruisent lorsque le nombre de sommets ou le type change
+    connect(mVertexScrollBar, &QScrollBar::valueChanged, this, &QDEGeometricOptimisationPanel::rebuildPolygons);
+    connect(mShapeComboBox, &QComboBox::currentIndexChanged, this, &QDEGeometricOptimisationPanel::updateSelectedPolygon);
+
+    // Redessiner automatiquement lorsque le canevas est redimensionn?
+    connect(mVisualizationLabel, &QImageViewer::resized, this, 
+        [this]()
+        {
+            updateCanvasRect();
+            drawPreview();
+        });
+}
+
+
+
+
+
+
+
+
+
 void QDEGeometricOptimisationPanel::updateCanvasRect()
 {
-    QSize size(mVisualizationLabel->size().width() - 1,
-        mVisualizationLabel->size().height() - 1);
-    if (size.width() < 1)  size.setWidth(1);
-    if (size.height() < 1) size.setHeight(1);
+    // NOTE : QWidget size is integer-based
+    const int w = mVisualizationLabel->size().width() - 1;
+    const int h = mVisualizationLabel->size().height() - 1;
+
+    QSize size((w < 1) ? 1 : w, (h < 1) ? 1 : h);
 
     mCanvasRect = QRectF(QPointF(0.0, 0.0), size);
 }
 
-QDEGeometricOptimisationPanel::polygoneMode
-QDEGeometricOptimisationPanel::currentShapeKind() const
+QDEGeometricOptimisationPanel::polygoneMode QDEGeometricOptimisationPanel::currentShapeKind() const
 {
     switch (mShapeComboBox->currentIndex()) {
-    case 0:  return polygoneMode::Regular;
-    case 1:  return polygoneMode::Convex;
-    case 2:  return polygoneMode::Star;
-    default: return polygoneMode::Regular;
+        case 1:  return polygoneMode::Convex;
+        case 2:  return polygoneMode::Star;
+        default: return polygoneMode::Regular;
     }
 }
 
 Polygon* QDEGeometricOptimisationPanel::currentPolygone() const
 {
-    int index = mShapeComboBox->currentIndex();
-    if (index < 0 || index >= mPolygones.size())
-        return nullptr;
-    return mPolygones[index];
+    const int index = mShapeComboBox->currentIndex();
+    const int count = static_cast<int>(mPolygones.size());
+    // NOTE : Comparing index >= mPolygones.size() causes a signed/unsigned warning.
+
+    return (index >= 0 && index < count) ? mPolygones[index] : nullptr;
 }
 
 void QDEGeometricOptimisationPanel::regenerateObstacles()
 {
+    const int obstacleCount = mObstacleScrollBar->value();
+
     mObstaclePoints.clear();
 
-    int const count = mObstacleScrollBar->value();
-    if (count <= 0 || !mCanvasRect.isValid()) {
-        drawPreview();
-        return;
-    }
+    if (obstacleCount > 0 && mCanvasRect.isValid()) {
+        const double w = mCanvasRect.width();
+        const double h = mCanvasRect.height();
+        auto* rgg = QRandomGenerator::global();
 
-    for (int i = 0; i < count; ++i) {
-        double x = QRandomGenerator::global()->bounded(mCanvasRect.width());
-        double y = QRandomGenerator::global()->bounded(mCanvasRect.height());
-        mObstaclePoints << QPointF(x, y);
-    }
+        mObstaclePoints.reserve(obstacleCount); // Reserve enough memory to avoid reallocation
 
+        for (int i = 0; i < obstacleCount; ++i) {
+            mObstaclePoints.append(QPointF(rgg->bounded(w), rgg->bounded(h)));
+        }
+    }
     drawPreview();
 }
 
@@ -219,6 +225,11 @@ void QDEGeometricOptimisationPanel::rebuildPolygons()
     mPolygones.push_back(new PolygoneConvexe(n, mShapeFillColor, mShapeEdgeColor));
     mPolygones.push_back(new PolygoneEtoile(n, mShapeFillColor, mShapeEdgeColor));
 
+    updateSelectedPolygon();
+}
+
+void QDEGeometricOptimisationPanel::updateSelectedPolygon()
+{
     if (Polygon* p = currentPolygone())
         mBasePolygon = p->basePolygon();
     else
@@ -398,7 +409,7 @@ QStringLiteral(
 //======================================================================
 
 QDEGeometricOptimisationPanel::geometricOptimisationStrategy::
-geometricOptimisationStrategy(QRectF         canvas,
+geometricOptimisationStrategy(QRectF canvas,
     QList<QPointF> obstacles,
     QPolygonF      basePolygon)
     : de::SolutionStrategy(
@@ -458,6 +469,5 @@ std::string QDEGeometricOptimisationPanel::geometricOptimisationStrategy::toStri
         "Translation finale : ({:.3f}, {:.3f})\n"
         "Rotation finale    : {:.3f} deg\n"
         "Echelle finale     : {:.6f}",
-        mCanvas.width(), mCanvas.height(),
-        tx, ty, angle, s);
+        mCanvas.width(), mCanvas.height(), tx, ty, angle, s);
 }

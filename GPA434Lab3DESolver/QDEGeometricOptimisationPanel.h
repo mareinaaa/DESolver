@@ -9,11 +9,12 @@
 #include <QVector>
 #include <QList>
 #include <QPolygonF>
+#include <QScrollBar>
+#include <QPushButton>
+#include <QComboBox>
+
 
 class QImageViewer;
-class QScrollBar;
-class QHBoxLayout;
-class QComboBox;
 class Polygon;
 
 //! \brief Panneau représentant le problème d'optimisation géométrique affine.
@@ -30,7 +31,10 @@ public:
     QDEGeometricOptimisationPanel& operator=(QDEGeometricOptimisationPanel&&) = default;
     ~QDEGeometricOptimisationPanel() override = default;
 
-    // Box dimensions getter ??? GETTERS
+    // GETTERS
+    double obstacleCount()const;
+    double vertexCount() const;
+
 
     // QDESolutionPanel interface : retourne la stratégie pour ce problème
     de::SolutionStrategy* buildSolution() const override;
@@ -47,7 +51,7 @@ private:
     QScrollBar* mObstacleScrollBar;
     QScrollBar* mVertexScrollBar;
     QComboBox* mShapeComboBox;
-    //QPushButton* regenerateButton;
+    QPushButton* regenerateButton;
 
     // Données de visualisation
     QRectF         mCanvasRect;
@@ -64,8 +68,8 @@ private:
     QVector<Polygon*> mPolygones;
 
     // Construction d'une ligne "scrollbar + étiquette"
-    QWidget* buildScrollBarWidget(QScrollBar*& sb, int min, int max,
-        int defValue, QString const& suffix = QString());
+    QWidget* buildScrollBarWidget(QScrollBar*& sb, int minValue, int maxValue, 
+        int defValue, QString const& suffix);
 
     void updateCanvasRect();
     polygoneMode currentShapeKind() const;
@@ -73,6 +77,7 @@ private:
 
     void regenerateObstacles();  // Recréation aléatoire des obstacles
     void rebuildPolygons();      // Reconstruit les 3 formes (régulier, convexe, étoile)
+    void updateSelectedPolygon();
     void drawPreview();          // Affiche uniquement la forme de base centrée
     void establishConnections();
 
@@ -84,9 +89,18 @@ private:
 };
 
 
-//======================================================================
-//  geometricOptimisationStrategy
-//======================================================================
+
+
+
+
+
+
+
+
+
+
+
+
 
 class QDEGeometricOptimisationPanel::geometricOptimisationStrategy
     : public de::SolutionStrategy
