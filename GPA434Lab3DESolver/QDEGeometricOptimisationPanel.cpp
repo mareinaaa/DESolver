@@ -72,13 +72,17 @@ QDEGeometricOptimisationPanel::QDEGeometricOptimisationPanel(QWidget* parent)
 
     // Initialisation differ?e pour avoir la taille finale du canevas
     // "Run this code after the event loop returns, once the layout has been applied and the widget has a valid size."
-    QTimer::singleShot(0, this, 
-        [this]()
-        {
-            updateCanvasRect();
-            regenerateObstacles();
-            updateSelectedPolygon();
-        });
+    //QTimer::singleShot(0, this, 
+    //    [this]()
+    //    {
+    //        updateCanvasRect();
+    //        //regenerateObstacles();
+    //        updateSelectedPolygon();
+    //    });
+
+    updateCanvasRect();
+    regenerateObstacles();
+    updateSelectedPolygon();
 }
 
 
@@ -202,13 +206,13 @@ void QDEGeometricOptimisationPanel::updateSelectedPolygon()
     switch (polygonType)
     {
     case polygoneMode::Convex:
-        mCurrentPolygon = std::unique_ptr<Polygon>(new PolygoneConvexe(vertexSize, mShapeFillColor, mShapeEdgeColor));
+        mCurrentPolygon = std::unique_ptr<Polygon>(new ConvexPolygon(vertexSize, mShapeFillColor, mShapeEdgeColor));
         break;
     case polygoneMode::Star:
-        mCurrentPolygon = std::unique_ptr<Polygon>(new PolygoneEtoile(vertexSize, mShapeFillColor, mShapeEdgeColor));
+        mCurrentPolygon = std::unique_ptr<Polygon>(new StarPolygon(vertexSize, mShapeFillColor, mShapeEdgeColor));
         break;
     default: 
-        mCurrentPolygon = std::unique_ptr<Polygon>(new PolygoneRegulier(vertexSize, mShapeFillColor, mShapeEdgeColor));
+        mCurrentPolygon = std::unique_ptr<Polygon>(new RegularPolygon(vertexSize, mShapeFillColor, mShapeEdgeColor));
         break;
     }
 
@@ -218,6 +222,9 @@ void QDEGeometricOptimisationPanel::updateSelectedPolygon()
 
 void QDEGeometricOptimisationPanel::renderScene(DrawMode mode, const QDEAdapter* adapter)
 {
+    if (!mCurrentPolygon)
+        return;   // or drawPreview();
+
     // Assure que le rectangle du canevas reflète la vraie taille actuelle du widget
     updateCanvasRect();
 
@@ -277,13 +284,8 @@ void QDEGeometricOptimisationPanel::renderScene(DrawMode mode, const QDEAdapter*
             double s = population[i][3];
 
             // Matrice de transformation 2D (translation + rotation + scale)
-            QTransform tr;
-            tr.translate(tx, ty);
-            tr.rotate(angle);
-            tr.scale(s, s);
-
             // Applique la transformation au polygone de base.
-            QPolygonF transformed = tr.map(mBasePolygon);
+            QPolygonF transformed = mCurrentPolygon->applyTransform(tx, ty, angle, s);
 
             painter.save();
 
@@ -320,6 +322,10 @@ void QDEGeometricOptimisationPanel::updateVisualization(QDEAdapter const& de)
 {
     renderScene(DrawMode::Simulation, &de);
 }
+
+
+
+
 
 
 
@@ -406,8 +412,10 @@ double QDEGeometricOptimisationPanel::geometricOptimisationStrategy::process(
 
     // transformed.boundingRect() = Boite qui contient le polygone
     // Polygone dans la zone affichable
-    if (!mCanvas.contains(transformed.boundingRect()))
-        return -s;
+    for (const QPointF& pt : transformed)
+        if (!mCanvas.contains(pt))
+            return -s;
+
     
     // Polygone ne se positionne pas sur un obstacle
     for (const QPointF& p : mObstacles) {

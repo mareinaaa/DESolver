@@ -3,66 +3,54 @@
 #include <QTransform>
 #include <QtMath>
 
-// -----------------------------------------------------------------------------
-// Polygone (base)
-// -----------------------------------------------------------------------------
 
 Polygon::Polygon(size_t numVertices, QColor const& fillColor, QColor const& edgeColor)
-    : mNumVertices(numVertices), mFillColor(fillColor), mEdgeColor(edgeColor)
+    : mVertexCount(numVertices), mFillColor(fillColor), mEdgeColor(edgeColor)
 {
 }
 
 Polygon::~Polygon() = default;
 
-size_t Polygon::setNumVertices() const { return mNumVertices; }
-QColor Polygon::setFillColor() const { return mFillColor; }
-QColor Polygon::setEdgeColor() const { return mEdgeColor; }
+size_t Polygon::vertexCount() const { return mVertexCount; }
+QColor Polygon::fillColor() const { return mFillColor; }
+QColor Polygon::edgeColor() const { return mEdgeColor; }
 
-QPolygonF Polygon::translate(QPointF const& delta) const
+QPolygonF Polygon::applyTransform(double tx, double ty, double angleDeg, double scaleFactor) const
 {
-    QTransform transform;
-    transform.translate(delta.x(), delta.y());
-    return transform.map(basePolygon());
-}
+    QTransform tr;
+    tr.translate(tx, ty);
+    tr.rotate(angleDeg);
+    tr.scale(scaleFactor, scaleFactor);
 
-QPolygonF Polygon::rotate(double angleDeg) const
-{
-    QTransform transform;
-    transform.rotate(angleDeg);
-    return transform.map(basePolygon());
-}
-
-QPolygonF Polygon::scale(double factor) const
-{
-    QTransform transform;
-    transform.scale(factor, factor);
-    return transform.map(basePolygon());
+    return tr.map(basePolygon());
 }
 
 // -----------------------------------------------------------------------------
 // PolygoneRegulier
 // -----------------------------------------------------------------------------
 
-PolygoneRegulier::PolygoneRegulier(size_t numVertices, QColor const& fillColor, QColor const& edgeColor)
+RegularPolygon::RegularPolygon(size_t numVertices, QColor const& fillColor, QColor const& edgeColor)
     : Polygon(numVertices, fillColor, edgeColor)
 {
 }
 
-QPolygonF PolygoneRegulier::basePolygon() const
+
+
+
+QPolygonF RegularPolygon::basePolygon() const
 {
     QPolygonF polygon;
 
-    if (mNumVertices < 3) {
+    if (mVertexCount < 3) {
         return polygon;
     }
 
     const double radius = 1.0;
-    const int n = static_cast<int>(mNumVertices);
+    double step = 2.0 * M_PI / static_cast<double>(mVertexCount);
 
-    polygon.reserve(n);
-    for (int i = 0; i < n; ++i) {
-        double angle = 2.0 * M_PI * static_cast<double>(i) / static_cast<double>(n)
-            - M_PI / 2.0; // pointe vers le haut
+    polygon.reserve(mVertexCount);
+    for (int i = 0; i < mVertexCount; ++i) {
+        double angle = static_cast<double>(i) * step - M_PI / 2.0;
         double x = radius * qCos(angle);
         double y = radius * qSin(angle);
         polygon << QPointF(x, y);
@@ -71,28 +59,29 @@ QPolygonF PolygoneRegulier::basePolygon() const
     return polygon;
 }
 
-// ---------------- PolygoneConvexe -----------------
 
-PolygoneConvexe::PolygoneConvexe(size_t numVertices, QColor const& fillColor, QColor const& edgeColor)
+
+
+ConvexPolygon::ConvexPolygon(size_t numVertices, QColor const& fillColor, QColor const& edgeColor)
     : Polygon(numVertices, fillColor, edgeColor)
 {
 }
 
-QPolygonF PolygoneConvexe::basePolygon() const
+QPolygonF ConvexPolygon::basePolygon() const
 {
     QPolygonF polygon;
 
-    if (mNumVertices < 3)
+    if (mVertexCount < 3)
         return polygon;
 
-    const int    n = static_cast<int>(mNumVertices);
     const double baseR = 1.0;
     const double amplitude = 0.25;
 
-    polygon.reserve(n);
-    for (int i = 0; i < n; ++i) {
-        double angle = 2.0 * M_PI * static_cast<double>(i) / static_cast<double>(n)
-            - M_PI / 2.0;
+    double step = 2.0 * M_PI / static_cast<double>(mVertexCount);
+
+    polygon.reserve(mVertexCount);
+    for (int i = 0; i < mVertexCount; ++i) {
+        double angle = step * static_cast<double>(i) - M_PI / 2.0;
 
         double radius = baseR * (1.0 + amplitude * qSin(3.0 * angle));
 
@@ -104,32 +93,30 @@ QPolygonF PolygoneConvexe::basePolygon() const
 }
 
 
-// -----------------------------------------------------------------------------
-// PolygoneEtoile
-// -----------------------------------------------------------------------------
 
-PolygoneEtoile::PolygoneEtoile(size_t numVertices, QColor const& fillColor, QColor const& edgeColor)
+
+StarPolygon::StarPolygon(size_t numVertices, QColor const& fillColor, QColor const& edgeColor)
     : Polygon(numVertices, fillColor, edgeColor)
 {
 }
 
-QPolygonF PolygoneEtoile::basePolygon() const
+QPolygonF StarPolygon::basePolygon() const
 {
     QPolygonF polygon;
 
-    if (mNumVertices < 3) {
+    if (mVertexCount < 3) {
         return polygon;
     }
 
-    const int branches = static_cast<int>(mNumVertices);
-    const int totalPoints = branches * 2;
+    const int branches = static_cast<int>(mVertexCount);
+    const int totalSides = branches * 2;
     const double outerR = 1.0;
     const double innerR = 0.30;
-    polygon.reserve(totalPoints);
+    polygon.reserve(totalSides);
 
-    for (int i = 0; i < totalPoints; ++i) {
+    for (int i = 0; i < totalSides; ++i) {
 
-        double angle = -M_PI / 2.0 + (2.0 * M_PI * i) / static_cast<double>(totalPoints);
+        double angle = -M_PI / 2.0 + (2.0 * M_PI * i) / static_cast<double>(totalSides);
         double radius = (i % 2 == 0) ? outerR : innerR;
 
         polygon << QPointF(radius * qCos(angle),

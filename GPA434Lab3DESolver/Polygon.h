@@ -4,63 +4,57 @@
 #include <QColor>
 #include <QPointF>
 
-// -----------------------------------------------------------------------------
 // Classe de base Polygone + 3 derives polymorphiques
-// -----------------------------------------------------------------------------
-
 class Polygon : public QPolygonF
 {
 public:
     Polygon(size_t numVertices, QColor const& fillColor, QColor const& edgeColor);
     virtual ~Polygon();
 
-    size_t setNumVertices() const;
-    QColor setFillColor() const;
-    QColor setEdgeColor() const;
+    size_t vertexCount() const;
+    QColor fillColor() const;
+    QColor edgeColor() const;
 
     virtual QPolygonF basePolygon() const = 0;
 
-    QPolygonF translate(QPointF const& delta) const;
-    QPolygonF rotate(double angleDeg) const;
-    QPolygonF scale(double factor) const;
+    QPolygonF applyTransform(double tx, double ty, double angleDeg, double scaleFactor) const;
 
 protected:
-    size_t mNumVertices{};
+    size_t mVertexCount;
     QColor mFillColor;
     QColor mEdgeColor;
 };
 
-// Polygone regulier
 
-class PolygoneRegulier : public Polygon
+
+class RegularPolygon : public Polygon
 {
 public:
-    PolygoneRegulier(size_t numVertices, QColor const& fillColor, QColor const& edgeColor);
-    ~PolygoneRegulier() override = default;
+    RegularPolygon(size_t numVertices, QColor const& fillColor, QColor const& edgeColor);
+    ~RegularPolygon() override = default;
 
     QPolygonF basePolygon() const override;
 };
 
-// -----------------------------------------------------------------------------
-// Forme en L (polygone concave dans le carre [-1,1] x [-1,1])
-// -----------------------------------------------------------------------------
 
-class PolygoneConvexe : public Polygon
+
+class ConvexPolygon : public Polygon
 {
 public:
-    PolygoneConvexe(size_t numVertices, QColor const& fillColor, QColor const& edgeColor);
-    ~PolygoneConvexe() override = default;
+    ConvexPolygon(size_t numVertices, QColor const& fillColor, QColor const& edgeColor);
+    ~ConvexPolygon() override = default;
 
     QPolygonF basePolygon() const override;
 };
 
-// Polygone etoile
 
-class PolygoneEtoile : public Polygon
+
+
+class StarPolygon : public Polygon
 {
 public:
-    PolygoneEtoile(size_t numVertices, QColor const& fillColor, QColor const& edgeColor);
-    ~PolygoneEtoile() override = default;
+    StarPolygon(size_t numVertices, QColor const& fillColor, QColor const& edgeColor);
+    ~StarPolygon() override = default;
 
     QPolygonF basePolygon() const override;
 };
