@@ -30,9 +30,7 @@ protected:
     QColor mEdgeColor;
 };
 
-// -----------------------------------------------------------------------------
 // Polygone regulier
-// -----------------------------------------------------------------------------
 
 class PolygoneRegulier : public Polygon
 {
@@ -56,9 +54,7 @@ public:
     QPolygonF basePolygon() const override;
 };
 
-// -----------------------------------------------------------------------------
 // Polygone etoile
-// -----------------------------------------------------------------------------
 
 class PolygoneEtoile : public Polygon
 {

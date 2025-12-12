@@ -127,7 +127,7 @@ QWidget* QDEGeometricOptimisationPanel::buildScrollBarWidget(
 
 void QDEGeometricOptimisationPanel::establishConnections()
 {
-    connect(mObstacleScrollBar, &QScrollBar::valueChanged, this, &QDESolutionPanel::parameterChanged);
+    //connect(mObstacleScrollBar, &QScrollBar::valueChanged, this, &QDESolutionPanel::parameterChanged);
     connect(mVertexScrollBar, &QScrollBar::valueChanged, this, &QDESolutionPanel::parameterChanged);
     connect(mShapeComboBox, &QComboBox::currentIndexChanged, this, &QDESolutionPanel::parameterChanged);
 
@@ -216,7 +216,6 @@ void QDEGeometricOptimisationPanel::updateSelectedPolygon()
     drawPreview();
 }
 
-
 void QDEGeometricOptimisationPanel::renderScene(DrawMode mode, const QDEAdapter* adapter)
 {
     // Assure que le rectangle du canevas reflète la vraie taille actuelle du widget
@@ -244,7 +243,7 @@ void QDEGeometricOptimisationPanel::renderScene(DrawMode mode, const QDEAdapter*
         painter.drawEllipse(pos, obstacleRadius, obstacleRadius);
 
     // --- Dessin du polygone statique ---
-    if (!mBasePolygon.isEmpty()) {
+    if (mode == DrawMode::Preview && !mBasePolygon.isEmpty()) {
         painter.save(); // sauvegarde l’état (position, rotation, scale…)
 
         // On dessine le polygone centré
