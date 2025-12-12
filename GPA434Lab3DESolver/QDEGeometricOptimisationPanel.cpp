@@ -224,14 +224,48 @@ void QDEGeometricOptimisationPanel::drawPreview()
     if (!size.isValid())
         return;
 
+    // Empty image to draw on
     QPixmap pixmap(size);
     pixmap.fill(mCanvasColor);
 
+    //QPainter is the main drawing object in Qt. Connecting it to pixmap means : everything I draw goes onto the pixmap.
+    // Why enable antialiasing ? Smooths lines and curves : avoids jagged edges.
     QPainter painter(&pixmap);
-    drawBaseScene(painter);  // <-- DESSIN COMMUN
+    painter.setRenderHint(QPainter::Antialiasing, true);
 
+    painter.setPen(Qt::NoPen); // No outline around the circles (NoPen)
+    painter.setBrush(mObstacleColor);
+
+    // ---- Draw obstacles ----
+    const double obstacleRadius = 3.0;
+    for (const QPointF& pos : mObstaclePoints) {
+        painter.drawEllipse(pos, obstacleRadius, obstacleRadius);
+    }
+
+    // ---- Draw polygon ----
+    if (!mBasePolygon.isEmpty()) { // if we have an actual polygon
+        painter.save(); // Stores the current transformation state so we can restore it later.
+        painter.translate(mCanvasRect.center());
+
+        painter.setBrush(mShapeFillColor);
+
+        QPen pen(mShapeEdgeColor, 0.0);
+        pen.setCosmetic(true);
+        painter.setPen(pen);
+
+        const double maxSide = std::min(mCanvasRect.width(), mCanvasRect.height());
+        const double scale = 0.4 * maxSide;
+
+        painter.scale(scale, scale);
+        painter.drawPolygon(mBasePolygon);
+
+        painter.restore();
+    }
+
+    // ---- Send output to widget ----
     mVisualizationLabel->setPixmap(pixmap);
 }
+
 
 
 // buildSolution() is called when the Differential Evolution solver wants to 
@@ -248,37 +282,9 @@ de::SolutionStrategy* QDEGeometricOptimisationPanel::buildSolution() const
 }
 
 
-void QDEGeometricOptimisationPanel::drawBaseScene(QPainter& painter)
-{
-    painter.setRenderHint(QPainter::Antialiasing, true);
-
-    // Obstacle settings
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(mObstacleColor);
-    const double obstacleRadius = 3.0;
-
-    // Draw obstacles
-    for (const QPointF& pos : mObstaclePoints)
-        painter.drawEllipse(pos, obstacleRadius, obstacleRadius);
-
-    // Draw static base polygon
-    if (!mBasePolygon.isEmpty()) {
-        painter.save();
-        painter.translate(mCanvasRect.center());
-
-        painter.setBrush(mShapeFillColor);
-        QPen pen(mShapeEdgeColor, 0.0);
-        pen.setCosmetic(true);
-        painter.setPen(pen);
-
-        const double maxSide = std::min(mCanvasRect.width(), mCanvasRect.height());
-        painter.scale(0.4 * maxSide, 0.4 * maxSide);
-
-        painter.drawPolygon(mBasePolygon);
-        painter.restore();
-    }
-}
-
+//======================================================================
+//  updateVisualization : pendant la simulation
+//======================================================================
 
 void QDEGeometricOptimisationPanel::updateVisualization(QDEAdapter const& de)
 {
@@ -292,13 +298,34 @@ void QDEGeometricOptimisationPanel::updateVisualization(QDEAdapter const& de)
     pixmap.fill(mCanvasColor);
 
     QPainter painter(&pixmap);
+    painter.setRenderHint(QPainter::Antialiasing, true);
 
-    drawBaseScene(painter);  // <-- DESSIN COMMUN
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(mObstacleColor);
+    double const obstacleRadius = 3.0;
+    for (QPointF const& pt : mObstaclePoints)
+        painter.drawEllipse(pt, obstacleRadius, obstacleRadius);
 
     auto const& pop = de.actualPopulation();
 
-    for (size_t i = 0; i < pop.size(); ++i)
-    {
+    if (!pop.size() || mBasePolygon.isEmpty()) {
+        painter.save();
+        painter.translate(mCanvasRect.center());
+
+        painter.setBrush(mShapeFillColor);
+        QPen pen(mShapeEdgeColor, 0.0);
+        pen.setCosmetic(true);
+        painter.setPen(pen);
+
+        double const maxSide = std::min(mCanvasRect.width(), mCanvasRect.height());
+        double const initialScale = 0.4 * maxSide;
+        painter.scale(initialScale, initialScale);
+
+        painter.drawPolygon(mBasePolygon);
+        painter.restore();
+    }
+
+    for (size_t i = 0; i < pop.size(); ++i) {
         double tx = pop[i][0];
         double ty = pop[i][1];
         double angle = pop[i][2];
@@ -321,8 +348,8 @@ void QDEGeometricOptimisationPanel::updateVisualization(QDEAdapter const& de)
         else {
             QPen otherPen(mShapeEdgeColor, 1.0, Qt::DashLine);
             otherPen.setCosmetic(true);
-            painter.setPen(otherPen);
             painter.setBrush(Qt::NoBrush);
+            painter.setPen(otherPen);
         }
         painter.drawPolygon(poly);
         painter.restore();

@@ -78,7 +78,6 @@ private:
     void regenerateObstacles();  // Recréation aléatoire des obstacles
     void updateSelectedPolygon();      // Reconstruit les 3 formes (régulier, convexe, étoile)
     void drawPreview();          // Affiche uniquement la forme de base centrée
-    void drawBaseScene(QPainter& painter);
     void establishConnections();
 
     // Stratégie de solution interne
