@@ -1,9 +1,4 @@
 #pragma once
-//#ifndef QDEGEOMETRICOPTIMISATIONPANEL_H
-//#define QDEGEOMETRICOPTIMISATIONPANEL_H
-#include "QDESolutionPanel.h"
-#include <SolutionStrategy.h>
-#include "Polygon.h"
 
 #include <QRectF>
 #include <QColor>
@@ -13,12 +8,15 @@
 #include <QScrollBar>
 #include <QPushButton>
 #include <QComboBox>
+#include <memory> // Pour std::unique_ptr
 
+#include "QDESolutionPanel.h"
+#include <SolutionStrategy.h>
+#include "Polygon.h"
 
 class QImageViewer;
 class Polygon;
 
-//! \brief Panneau représentant le problème d'optimisation géométrique affine.
 class QDEGeometricOptimisationPanel : public QDESolutionPanel
 {
     Q_OBJECT
@@ -31,11 +29,6 @@ public:
     QDEGeometricOptimisationPanel& operator=(QDEGeometricOptimisationPanel const&) = default;
     QDEGeometricOptimisationPanel& operator=(QDEGeometricOptimisationPanel&&) = default;
     ~QDEGeometricOptimisationPanel() override = default;
-
-    // GETTERS
-    int obstacleCount()const;
-    int vertexCount() const;
-
 
     // QDESolutionPanel interface : retourne la stratégie pour ce problème
     de::SolutionStrategy* buildSolution() const override;
@@ -61,13 +54,16 @@ private:
     QPolygonF      mBasePolygon;
 
     // Couleurs
-    QColor const mCanvasColor;
-    QColor const mObstacleColor;
-    QColor const mShapeFillColor;
-    QColor const mShapeEdgeColor;
+    const QColor mCanvasColor;
+    const QColor mObstacleColor;
+    const QColor mShapeFillColor;
+    const QColor mShapeEdgeColor;
 
     // Formes de base
     std::unique_ptr<Polygon> mCurrentPolygon;
+
+    int obstacleCount()const;
+    int vertexCount() const;
 
     // Construction d'une ligne "scrollbar + étiquette"
     QWidget* buildScrollBarWidget(QScrollBar*& sb, int minValue, int maxValue, 
@@ -79,6 +75,7 @@ private:
     void regenerateObstacles();  // Recréation aléatoire des obstacles
     void updateSelectedPolygon();      // Reconstruit les 3 formes (régulier, convexe, étoile)
     void drawPreview();          // Affiche uniquement la forme de base centrée
+    
     void renderScene(DrawMode mode, const QDEAdapter* adapter);
     void establishConnections();
 
