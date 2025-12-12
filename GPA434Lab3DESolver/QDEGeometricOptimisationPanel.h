@@ -46,6 +46,7 @@ public slots:
 
 private:
     enum class polygoneMode { Regular, Convex, Star };
+    enum class DrawMode { Preview, Simulation };
 
     //Widgets 
     QImageViewer* mVisualizationLabel;
@@ -78,7 +79,7 @@ private:
     void regenerateObstacles();  // Recréation aléatoire des obstacles
     void updateSelectedPolygon();      // Reconstruit les 3 formes (régulier, convexe, étoile)
     void drawPreview();          // Affiche uniquement la forme de base centrée
-    void drawBaseScene(QPainter& painter);
+    void renderScene(DrawMode mode, const QDEAdapter* adapter);
     void establishConnections();
 
     // Stratégie de solution interne
@@ -106,7 +107,7 @@ class QDEGeometricOptimisationPanel::geometricOptimisationStrategy
     : public de::SolutionStrategy
 {
 public:
-    geometricOptimisationStrategy(QRectF canvas, QList<QPointF> obstacles, QPolygonF basePolygon);
+    geometricOptimisationStrategy(const QRectF& canvas, const QList<QPointF>& obstacles, const QPolygonF& basePolygon);
     geometricOptimisationStrategy(geometricOptimisationStrategy const&) = default;
     geometricOptimisationStrategy(geometricOptimisationStrategy&&) = default;
     geometricOptimisationStrategy& operator=(geometricOptimisationStrategy const&) = default;

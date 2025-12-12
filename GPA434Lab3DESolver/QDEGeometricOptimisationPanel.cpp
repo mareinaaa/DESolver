@@ -127,7 +127,6 @@ QWidget* QDEGeometricOptimisationPanel::buildScrollBarWidget(
 
 void QDEGeometricOptimisationPanel::establishConnections()
 {
-
     connect(mObstacleScrollBar, &QScrollBar::valueChanged, this, &QDESolutionPanel::parameterChanged);
     connect(mVertexScrollBar, &QScrollBar::valueChanged, this, &QDESolutionPanel::parameterChanged);
     connect(mShapeComboBox, &QComboBox::currentIndexChanged, this, &QDESolutionPanel::parameterChanged);
@@ -138,14 +137,13 @@ void QDEGeometricOptimisationPanel::establishConnections()
     // Polygones : se reconstruisent lorsque le nombre de sommets ou le type change
     connect(mVertexScrollBar, &QScrollBar::valueChanged, this, &QDEGeometricOptimisationPanel::updateSelectedPolygon);
     connect(mShapeComboBox, &QComboBox::currentIndexChanged, this, &QDEGeometricOptimisationPanel::updateSelectedPolygon);
-    //connect(mObstacleScrollBar, &QScrollBar::valueChanged, this, &QDEGeometricOptimisationPanel::regenerateObstacles);
-
 
     // Redessiner automatiquement lorsque le canevas est redimensionn?
     connect(mVisualizationLabel, &QImageViewer::resized, this, 
         [this]()
         {
             updateCanvasRect();
+            regenerateObstacles();
             drawPreview();
         });
 }
@@ -218,103 +216,110 @@ void QDEGeometricOptimisationPanel::updateSelectedPolygon()
     drawPreview();
 }
 
-void QDEGeometricOptimisationPanel::drawBaseScene(QPainter& painter)
+
+void QDEGeometricOptimisationPanel::renderScene(DrawMode mode, const QDEAdapter* adapter)
 {
+    // Assure que le rectangle du canevas reflète la vraie taille actuelle du widget
+    updateCanvasRect();
+
+    // Calcul de la taille de l’image dans laquelle on va dessiner
+    const QSize size = mCanvasRect.size().toSize();
+    if (!size.isValid()) 
+        return;
+
+    // Pixmap est l'image temporaire en mémoire, sur laquelle tout sera dessiné
+    QPixmap pixmap(size);
+    pixmap.fill(mCanvasColor);
+
+    // QPainter est l’outil principal de dessin
+    QPainter painter(&pixmap);
     painter.setRenderHint(QPainter::Antialiasing, true);
 
-    // Obstacle settings
+    // --- Dessin des obstacles ---
     painter.setPen(Qt::NoPen);
     painter.setBrush(mObstacleColor);
     const double obstacleRadius = 3.0;
 
-    // Draw obstacles
     for (const QPointF& pos : mObstaclePoints)
         painter.drawEllipse(pos, obstacleRadius, obstacleRadius);
 
-    // Draw static base polygon
+    // --- Dessin du polygone statique ---
     if (!mBasePolygon.isEmpty()) {
-        painter.save();
+        painter.save(); // sauvegarde l’état (position, rotation, scale…)
+
+        // On dessine le polygone centré
         painter.translate(mCanvasRect.center());
 
         painter.setBrush(mShapeFillColor);
+
         QPen pen(mShapeEdgeColor, 0.0);
         pen.setCosmetic(true);
         painter.setPen(pen);
 
-        const double maxSide = std::min(mCanvasRect.width(), mCanvasRect.height());
-        painter.scale(0.4 * maxSide, 0.4 * maxSide);
+        const double max = std::min(mCanvasRect.width(), mCanvasRect.height());
+        const double scale = 0.4 * max;
 
+        painter.scale(scale, scale);
         painter.drawPolygon(mBasePolygon);
-        painter.restore();
-    }
-}
 
+        painter.restore(); // revient à l’état précédant le translate+scale
+    }
+
+    // Dessin de la simulation 
+    if (mode == DrawMode::Simulation && adapter != nullptr)
+    {
+        const auto& population = adapter->actualPopulation();
+
+        for (size_t i = 0; i < population.size(); ++i)
+        {
+            double tx = population[i][0];
+            double ty = population[i][1];
+            double angle = population[i][2];
+            double s = population[i][3];
+
+            // Matrice de transformation 2D (translation + rotation + scale)
+            QTransform tr;
+            tr.translate(tx, ty);
+            tr.rotate(angle);
+            tr.scale(s, s);
+
+            // Applique la transformation au polygone de base.
+            QPolygonF transformed = tr.map(mBasePolygon);
+
+            painter.save();
+
+            if (i == 0)
+            {
+                // Meilleure solution  dessin plus visible
+                painter.setBrush(mShapeFillColor);
+                QPen bestPen(mShapeEdgeColor, 1.5);
+                bestPen.setCosmetic(true);
+                painter.setPen(bestPen);
+            }
+            else {
+                // Les autres solutions  contour en pointillés
+                painter.setBrush(Qt::NoBrush);
+                QPen pen(mShapeEdgeColor, 1.0, Qt::DashLine);
+                pen.setCosmetic(true);
+                painter.setPen(pen);
+            }
+
+            painter.drawPolygon(transformed);
+            painter.restore();
+        }
+    }
+
+    mVisualizationLabel->setPixmap(pixmap);
+}
 
 void QDEGeometricOptimisationPanel::drawPreview()
 {
-    const QSize size = mCanvasRect.size().toSize();
-    if (!size.isValid())
-        return;
-
-    QPixmap pixmap(size);
-    pixmap.fill(mCanvasColor);
-
-    QPainter painter(&pixmap);
-    drawBaseScene(painter);  // <-- DESSIN COMMUN
-
-    mVisualizationLabel->setPixmap(pixmap);
+    renderScene(DrawMode::Preview, nullptr);
 }
-
 
 void QDEGeometricOptimisationPanel::updateVisualization(QDEAdapter const& de)
 {
-    updateCanvasRect();
-
-    QSize const size = mCanvasRect.size().toSize();
-    if (!size.isValid())
-        return;
-
-    QPixmap pixmap(size);
-    pixmap.fill(mCanvasColor);
-
-    QPainter painter(&pixmap);
-
-    drawBaseScene(painter);  // <-- DESSIN COMMUN
-
-    auto const& pop = de.actualPopulation();
-
-    for (size_t i = 0; i < pop.size(); ++i)
-    {
-        double tx = pop[i][0];
-        double ty = pop[i][1];
-        double angle = pop[i][2];
-        double s = pop[i][3];
-
-        QTransform tr;
-        tr.translate(tx, ty);
-        tr.rotate(angle);
-        tr.scale(s, s);
-
-        QPolygonF poly = tr.map(mBasePolygon);
-
-        painter.save();
-        if (i == 0) {
-            painter.setBrush(mShapeFillColor);
-            QPen bestPen(mShapeEdgeColor, 1.5);
-            bestPen.setCosmetic(true);
-            painter.setPen(bestPen);
-        }
-        else {
-            QPen otherPen(mShapeEdgeColor, 1.0, Qt::DashLine);
-            otherPen.setCosmetic(true);
-            painter.setPen(otherPen);
-            painter.setBrush(Qt::NoBrush);
-        }
-        painter.drawPolygon(poly);
-        painter.restore();
-    }
-
-    mVisualizationLabel->setPixmap(pixmap);
+    renderScene(DrawMode::Simulation, &de);
 }
 
 
@@ -330,9 +335,7 @@ de::SolutionStrategy* QDEGeometricOptimisationPanel::buildSolution() const
     auto* self = const_cast<QDEGeometricOptimisationPanel*>(this);
     self->updateCanvasRect();
 
-    return new geometricOptimisationStrategy(self->mCanvasRect,
-        self->mObstaclePoints,
-        self->mBasePolygon);
+    return new geometricOptimisationStrategy(self->mCanvasRect, self->mObstaclePoints, self->mBasePolygon);
 }
 
 
@@ -365,23 +368,19 @@ QStringLiteral(
 );
 
 
-//======================================================================
-//  geometricOptimisationStrategy
-//======================================================================
 
-QDEGeometricOptimisationPanel::geometricOptimisationStrategy::
-geometricOptimisationStrategy(QRectF canvas,
-    QList<QPointF> obstacles,
-    QPolygonF      basePolygon)
+QDEGeometricOptimisationPanel::geometricOptimisationStrategy::geometricOptimisationStrategy 
+    (const QRectF& canvas, const QList<QPointF>& obstacles, const QPolygonF& basePolygon) 
     : de::SolutionStrategy(
         gopTitle,
         gopSummary,
         QDEGeometricOptimisationPanel::gop_description.toStdString())
-    , mCanvas(std::move(canvas))
-    , mObstacles(std::move(obstacles))
-    , mBasePolygon(std::move(basePolygon))
+    , mCanvas(canvas)
+    , mObstacles(obstacles)
+    , mBasePolygon(basePolygon)
 {
     mSolutionDomain.resize(4);
+    // 4 parameters in domain(x, y, angle, scale)
     mSolutionDomain[0].set(0.0, mCanvas.width());
     mSolutionDomain[1].set(0.0, mCanvas.height());
     mSolutionDomain[2].set(0.0, 360.0);
@@ -406,10 +405,13 @@ double QDEGeometricOptimisationPanel::geometricOptimisationStrategy::process(
 
     QPolygonF transformed = tr.map(mBasePolygon);
 
+    // transformed.boundingRect() = Boite qui contient le polygone
+    // Polygone dans la zone affichable
     if (!mCanvas.contains(transformed.boundingRect()))
         return -s;
-
-    for (QPointF const& p : mObstacles) {
+    
+    // Polygone ne se positionne pas sur un obstacle
+    for (const QPointF& p : mObstacles) {
         if (transformed.containsPoint(p, Qt::OddEvenFill))
             return -s;
     }
