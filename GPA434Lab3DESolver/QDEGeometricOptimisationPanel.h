@@ -3,6 +3,7 @@
 //#define QDEGEOMETRICOPTIMISATIONPANEL_H
 #include "QDESolutionPanel.h"
 #include <SolutionStrategy.h>
+#include "Polygon.h"
 
 #include <QRectF>
 #include <QColor>
@@ -32,8 +33,8 @@ public:
     ~QDEGeometricOptimisationPanel() override = default;
 
     // GETTERS
-    double obstacleCount()const;
-    double vertexCount() const;
+    int obstacleCount()const;
+    int vertexCount() const;
 
 
     // QDESolutionPanel interface : retourne la stratégie pour ce problème
@@ -65,7 +66,7 @@ private:
     QColor const mShapeEdgeColor;
 
     // Formes de base
-    QVector<Polygon*> mPolygones;
+    std::unique_ptr<Polygon> mCurrentPolygon;
 
     // Construction d'une ligne "scrollbar + étiquette"
     QWidget* buildScrollBarWidget(QScrollBar*& sb, int minValue, int maxValue, 
@@ -73,11 +74,9 @@ private:
 
     void updateCanvasRect();
     polygoneMode currentShapeKind() const;
-    Polygon* currentPolygone() const;
 
     void regenerateObstacles();  // Recréation aléatoire des obstacles
-    void rebuildPolygons();      // Reconstruit les 3 formes (régulier, convexe, étoile)
-    void updateSelectedPolygon();
+    void updateSelectedPolygon();      // Reconstruit les 3 formes (régulier, convexe, étoile)
     void drawPreview();          // Affiche uniquement la forme de base centrée
     void establishConnections();
 

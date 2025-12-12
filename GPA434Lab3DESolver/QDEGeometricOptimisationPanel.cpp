@@ -1,7 +1,6 @@
 #include "QDEGeometricOptimisationPanel.h"
 
 #include "QImageViewer.h"
-#include "Polygon.h"
 
 #include <QGroupBox>
 #include <QFormLayout>
@@ -21,12 +20,13 @@ QDEGeometricOptimisationPanel::QDEGeometricOptimisationPanel(QWidget* parent)
     , mObstacleScrollBar{ new QScrollBar }
     , mVertexScrollBar{ new QScrollBar }
     , mShapeComboBox{ new QComboBox }
-    , regenerateButton { new QPushButton }
+    , regenerateButton{ new QPushButton }
     , mCanvasRect{}
     , mCanvasColor(21, 23, 43)
     , mObstacleColor(90, 96, 120)
     , mShapeFillColor(205, 164, 52, 200)
     , mShapeEdgeColor(244, 197, 66)
+    , mCurrentPolygon{ nullptr }
 {
     // Create the 'input parameters' group box and its contents
     QGroupBox* parameterGroupBox{ new QGroupBox("Paramètres") };
@@ -77,28 +77,20 @@ QDEGeometricOptimisationPanel::QDEGeometricOptimisationPanel(QWidget* parent)
         {
             updateCanvasRect();
             regenerateObstacles();
-            rebuildPolygons();
+            updateSelectedPolygon();
         });
 }
 
-/// MARIA ADDED -----------------------------------------
 
-double QDEGeometricOptimisationPanel::obstacleCount() const
+int QDEGeometricOptimisationPanel::obstacleCount() const
 {
-    return static_cast<double>(mObstacleScrollBar->value());
+    return static_cast<int>(mObstacleScrollBar->value());
 }
 
-double QDEGeometricOptimisationPanel::vertexCount() const
+int QDEGeometricOptimisationPanel::vertexCount() const
 {
-    return static_cast<double>(mVertexScrollBar->value());
+    return static_cast<int>(mVertexScrollBar->value());
 }
-
-//
-//de::SolutionStrategy* QDEOpenBoxPanel::buildSolution() const
-//{
-//    return new OpenBoxStrategy(mWidthScrollBar->value(), mHeightScrollBar->value());
-//}
-/// MARIA ADDED -----------------------------------------
 
 
 //======================================================================
@@ -144,8 +136,10 @@ void QDEGeometricOptimisationPanel::establishConnections()
     connect(regenerateButton, &QPushButton::clicked, this, &QDEGeometricOptimisationPanel::regenerateObstacles);
 
     // Polygones : se reconstruisent lorsque le nombre de sommets ou le type change
-    connect(mVertexScrollBar, &QScrollBar::valueChanged, this, &QDEGeometricOptimisationPanel::rebuildPolygons);
+    connect(mVertexScrollBar, &QScrollBar::valueChanged, this, &QDEGeometricOptimisationPanel::updateSelectedPolygon);
     connect(mShapeComboBox, &QComboBox::currentIndexChanged, this, &QDEGeometricOptimisationPanel::updateSelectedPolygon);
+    //connect(mObstacleScrollBar, &QScrollBar::valueChanged, this, &QDEGeometricOptimisationPanel::regenerateObstacles);
+
 
     // Redessiner automatiquement lorsque le canevas est redimensionn?
     connect(mVisualizationLabel, &QImageViewer::resized, this, 
@@ -170,9 +164,7 @@ void QDEGeometricOptimisationPanel::updateCanvasRect()
     const int w = mVisualizationLabel->size().width() - 1;
     const int h = mVisualizationLabel->size().height() - 1;
 
-    QSize size((w < 1) ? 1 : w, (h < 1) ? 1 : h);
-
-    mCanvasRect = QRectF(QPointF(0.0, 0.0), size);
+    mCanvasRect = QRectF(QPointF(0.0, 0.0), QSize((w < 1) ? 1 : w, (h < 1) ? 1 : h));
 }
 
 QDEGeometricOptimisationPanel::polygoneMode QDEGeometricOptimisationPanel::currentShapeKind() const
@@ -184,105 +176,101 @@ QDEGeometricOptimisationPanel::polygoneMode QDEGeometricOptimisationPanel::curre
     }
 }
 
-Polygon* QDEGeometricOptimisationPanel::currentPolygone() const
-{
-    const int index = mShapeComboBox->currentIndex();
-    const int count = static_cast<int>(mPolygones.size());
-    // NOTE : Comparing index >= mPolygones.size() causes a signed/unsigned warning.
-
-    return (index >= 0 && index < count) ? mPolygones[index] : nullptr;
-}
-
 void QDEGeometricOptimisationPanel::regenerateObstacles()
 {
-    const int obstacleCount = mObstacleScrollBar->value();
+    const int count = obstacleCount();
 
     mObstaclePoints.clear();
 
-    if (obstacleCount > 0 && mCanvasRect.isValid()) {
+    if (count > 0 && mCanvasRect.isValid()) {
         const double w = mCanvasRect.width();
         const double h = mCanvasRect.height();
         auto* rgg = QRandomGenerator::global();
 
-        mObstaclePoints.reserve(obstacleCount); // Reserve enough memory to avoid reallocation
+        mObstaclePoints.reserve(count); // Reserve enough memory to avoid reallocation
 
-        for (int i = 0; i < obstacleCount; ++i) {
+        for (int i = 0; i < count; ++i) {
             mObstaclePoints.append(QPointF(rgg->bounded(w), rgg->bounded(h)));
         }
     }
     drawPreview();
 }
 
-void QDEGeometricOptimisationPanel::rebuildPolygons()
-{
-    for (Polygon* p : mPolygones)
-        delete p;
-    mPolygones.clear();
-
-    size_t n = static_cast<size_t>(mVertexScrollBar->value());
-
-    mPolygones.push_back(new PolygoneRegulier(n, mShapeFillColor, mShapeEdgeColor));
-    mPolygones.push_back(new PolygoneConvexe(n, mShapeFillColor, mShapeEdgeColor));
-    mPolygones.push_back(new PolygoneEtoile(n, mShapeFillColor, mShapeEdgeColor));
-
-    updateSelectedPolygon();
-}
-
 void QDEGeometricOptimisationPanel::updateSelectedPolygon()
 {
-    if (Polygon* p = currentPolygone())
-        mBasePolygon = p->basePolygon();
-    else
-        mBasePolygon.clear();
+    polygoneMode polygonType = currentShapeKind();
+    const int vertexSize = vertexCount();
+    
+    switch (polygonType)
+    {
+    case polygoneMode::Convex:
+        mCurrentPolygon = std::unique_ptr<Polygon>(new PolygoneConvexe(vertexSize, mShapeFillColor, mShapeEdgeColor));
+        break;
+    case polygoneMode::Star:
+        mCurrentPolygon = std::unique_ptr<Polygon>(new PolygoneEtoile(vertexSize, mShapeFillColor, mShapeEdgeColor));
+        break;
+    default: 
+        mCurrentPolygon = std::unique_ptr<Polygon>(new PolygoneRegulier(vertexSize, mShapeFillColor, mShapeEdgeColor));
+        break;
+    }
 
+    mBasePolygon = mCurrentPolygon->basePolygon();
     drawPreview();
 }
 
 void QDEGeometricOptimisationPanel::drawPreview()
 {
-    updateCanvasRect();
-
-    QSize const size = mCanvasRect.size().toSize();
+    const QSize size = mCanvasRect.size().toSize();
     if (!size.isValid())
         return;
 
+    // Empty image to draw on
     QPixmap pixmap(size);
     pixmap.fill(mCanvasColor);
 
+    //QPainter is the main drawing object in Qt. Connecting it to pixmap means : everything I draw goes onto the pixmap.
+    // Why enable antialiasing ? Smooths lines and curves : avoids jagged edges.
     QPainter painter(&pixmap);
     painter.setRenderHint(QPainter::Antialiasing, true);
 
-    painter.setPen(Qt::NoPen);
+    painter.setPen(Qt::NoPen); // No outline around the circles (NoPen)
     painter.setBrush(mObstacleColor);
-    double const obstacleRadius = 3.0;
-    for (QPointF const& pt : mObstaclePoints)
-        painter.drawEllipse(pt, obstacleRadius, obstacleRadius);
 
-    if (!mBasePolygon.isEmpty()) {
-        painter.save();
+    // ---- Draw obstacles ----
+    const double obstacleRadius = 3.0;
+    for (const QPointF& pos : mObstaclePoints) {
+        painter.drawEllipse(pos, obstacleRadius, obstacleRadius);
+    }
+
+    // ---- Draw polygon ----
+    if (!mBasePolygon.isEmpty()) { // if we have an actual polygon
+        painter.save(); // Stores the current transformation state so we can restore it later.
         painter.translate(mCanvasRect.center());
 
         painter.setBrush(mShapeFillColor);
+
         QPen pen(mShapeEdgeColor, 0.0);
         pen.setCosmetic(true);
         painter.setPen(pen);
 
-        double const maxSide = std::min(mCanvasRect.width(), mCanvasRect.height());
-        double const initialScale = 0.4 * maxSide;
-        painter.scale(initialScale, initialScale);
+        const double maxSide = std::min(mCanvasRect.width(), mCanvasRect.height());
+        const double scale = 0.4 * maxSide;
 
+        painter.scale(scale, scale);
         painter.drawPolygon(mBasePolygon);
+
         painter.restore();
     }
 
+    // ---- Send output to widget ----
     mVisualizationLabel->setPixmap(pixmap);
 }
 
 
-//======================================================================
-//  buildSolution
-//======================================================================
 
+// buildSolution() is called when the Differential Evolution solver wants to 
+// start optimizing your geometric transformation (scale, rotation, translation) 
+// for your polygon.
 de::SolutionStrategy* QDEGeometricOptimisationPanel::buildSolution() const
 {
     auto* self = const_cast<QDEGeometricOptimisationPanel*>(this);
