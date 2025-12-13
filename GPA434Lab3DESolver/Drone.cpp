@@ -1,25 +1,28 @@
 #include <Drone.h>
 
 
-Drone::Drone(double x, double y, double radius, std::string spritePath, double weight)
-    : SpriteObject(x, y, radius, spritePath)
-    , mWeight{ weight }
+Drone::Drone(QPointF position, double radius, std::string spritePath, QString name)
+    : SpriteObject(position, radius, spritePath)
+    , mName{ name }
 {
 
 }
     
 
-double Drone::weight() const
+QString Drone::name() const
 {
-    return mWeight;
+    return mName;
 }
 
 
 
-
-class AirDrone : public Drone
-{
-public:
-    AirDrone();
-    ~AirDrone() override = default;
-};
+//AirDrone::AirDrone(QPointF position, double radius, std::string spritePath, QString name)
+//    : Drone(position, radius, spritePath, name)
+//{
+//
+//}
+//
+//void AirDrone::buildPath(QVector<QPointF> const& controlPoints, QVector<QPointF>& pathPoints) const
+//{
+//
+//}

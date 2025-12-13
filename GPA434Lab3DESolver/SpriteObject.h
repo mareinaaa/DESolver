@@ -1,5 +1,8 @@
 #pragma once
 #include <vector>
+
+#include <QPointF>
+
 #include <string>
 
 class SpriteObject
@@ -7,19 +10,19 @@ class SpriteObject
 public:
     virtual ~SpriteObject() = default;
 
-    double posX() const;
-    double posY() const;
     double radius() const;
-    std::string spritePath() const;
 
+    QPointF const& position() const;
+    std::string const& spritePath() const;
+
+    void setPosition(QPointF position);
     void setPosition(double x, double y);
 
 protected:
-    SpriteObject(double x, double y, double radius, std::string spritePath);
+    SpriteObject(QPointF position, double radius, std::string spritePath);
 
 private:
     double mRadius;
-    double mX;
-    double mY;
+    QPointF mPosition;
     std::string mSpritePath;
 };

@@ -1,9 +1,8 @@
 #include <SpriteObject.h>
 
 
-SpriteObject::SpriteObject(double x, double y, double radius, std::string spritePath)
-    : mX{ x }
-    , mY{ y }
+SpriteObject::SpriteObject(QPointF position, double radius, std::string spritePath)
+    : mPosition{ position }
     , mRadius{ radius }
     , mSpritePath{ spritePath }
 {
@@ -11,30 +10,30 @@ SpriteObject::SpriteObject(double x, double y, double radius, std::string sprite
 }
 
 
-double SpriteObject::posX() const
-{
-    return mX;
-}
-
-double SpriteObject::posY() const
-{
-    return mY;
-}
-
 double SpriteObject::radius() const
 {
     return mRadius;
 }
 
-std::string SpriteObject::spritePath() const
+QPointF const& SpriteObject::position() const
+{
+    return mPosition;
+}
+
+std::string const& SpriteObject::spritePath() const
 {
     return mSpritePath;
 }
 
 
 
+void SpriteObject::setPosition(QPointF position)
+{
+    mPosition = position;
+}
+
 void SpriteObject::setPosition(double x, double y)
 {
-    mX = x;
-    mY = y;
+    mPosition.setX(x);
+    mPosition.setY(y);
 }

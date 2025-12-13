@@ -111,6 +111,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Drone.cpp" />
+    <ClCompile Include="Obstacle.cpp" />
     <ClCompile Include="Polygon.cpp" />
     <ClCompile Include="Polygon.h" />
     <ClCompile Include="QDEAdapter.cpp" />
@@ -130,6 +132,7 @@
     <ClCompile Include="QDESolutionTabPanel.cpp" />
     <ClCompile Include="QElidedLabel.cpp" />
     <ClCompile Include="QImageViewer.cpp" />
+    <ClCompile Include="SpriteObject.cpp" />
     <QtRcc Include="GPA434Lab3DESolver.qrc" />
     <QtMoc Include="GPA434Lab3DESolver.h" />
     <ClCompile Include="GPA434Lab3DESolver.cpp" />
@@ -170,6 +173,25 @@
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QDEGeometricOptimisationPanel.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Drone.h" />
+    <ClInclude Include="Obstacle.h" />
+    <ClInclude Include="SpriteObject.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\DRONE\AirDrone.png" />
+    <Image Include="..\..\DRONE\LandDrone.png" />
+    <Image Include="..\..\DRONE\OBSTACLES\LandObstacle1.png" />
+    <Image Include="..\..\DRONE\OBSTACLES\LandObstacle2.png" />
+    <Image Include="..\..\DRONE\OBSTACLES\LandObstacle3.png" />
+    <Image Include="..\..\DRONE\OBSTACLES\AirObstacle1.png" />
+    <Image Include="..\..\DRONE\OBSTACLES\AirObstacle2.png" />
+    <Image Include="..\..\DRONE\OBSTACLES\AirObstacle3.png" />
+    <Image Include="..\..\DRONE\OBSTACLES\WaterObstacle1.png" />
+    <Image Include="..\..\DRONE\OBSTACLES\WaterObstacle2.png" />
+    <Image Include="..\..\DRONE\OBSTACLES\WaterObstacle3.png" />
+    <Image Include="..\..\DRONE\WaterDrone.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

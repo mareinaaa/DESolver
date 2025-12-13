@@ -37,6 +37,15 @@
     <Filter Include="Source Files\Components">
       <UniqueIdentifier>{48625a2d-5c25-4fc9-a7fd-fa96976c8437}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Sprites">
+      <UniqueIdentifier>{c1abf02d-2629-42f9-ad30-27a61a401a0e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Sprites\Drones">
+      <UniqueIdentifier>{09453761-9634-4d2d-b279-24939b923676}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Sprites\Obstacles">
+      <UniqueIdentifier>{a64d640f-197a-47f6-9c20-d1a08a2ec742}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="GPA434Lab3DESolver.qrc">
@@ -95,6 +104,15 @@
     <ClCompile Include="Polygon.cpp">
       <Filter>Source Files\Components</Filter>
     </ClCompile>
+    <ClCompile Include="SpriteObject.cpp">
+      <Filter>Source Files\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Drone.cpp">
+      <Filter>Source Files\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Obstacle.cpp">
+      <Filter>Source Files\Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QImageViewer.h">
@@ -133,5 +151,54 @@
     <QtMoc Include="QDEGeometricOptimisationPanel.h">
       <Filter>Header Files\ProblemToSolveSubPanels</Filter>
     </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Drone.h">
+      <Filter>Header Files\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Obstacle.h">
+      <Filter>Header Files\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteObject.h">
+      <Filter>Header Files\Components</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\DRONE\AirDrone.png">
+      <Filter>Source Files\Sprites\Drones</Filter>
+    </Image>
+    <Image Include="..\..\DRONE\LandDrone.png">
+      <Filter>Source Files\Sprites\Drones</Filter>
+    </Image>
+    <Image Include="..\..\DRONE\WaterDrone.png">
+      <Filter>Source Files\Sprites\Drones</Filter>
+    </Image>
+    <Image Include="..\..\DRONE\OBSTACLES\LandObstacle1.png">
+      <Filter>Source Files\Sprites\Obstacles</Filter>
+    </Image>
+    <Image Include="..\..\DRONE\OBSTACLES\LandObstacle2.png">
+      <Filter>Source Files\Sprites\Obstacles</Filter>
+    </Image>
+    <Image Include="..\..\DRONE\OBSTACLES\LandObstacle3.png">
+      <Filter>Source Files\Sprites\Obstacles</Filter>
+    </Image>
+    <Image Include="..\..\DRONE\OBSTACLES\AirObstacle1.png">
+      <Filter>Source Files\Sprites\Obstacles</Filter>
+    </Image>
+    <Image Include="..\..\DRONE\OBSTACLES\AirObstacle2.png">
+      <Filter>Source Files\Sprites\Obstacles</Filter>
+    </Image>
+    <Image Include="..\..\DRONE\OBSTACLES\AirObstacle3.png">
+      <Filter>Source Files\Sprites\Obstacles</Filter>
+    </Image>
+    <Image Include="..\..\DRONE\OBSTACLES\WaterObstacle1.png">
+      <Filter>Source Files\Sprites\Obstacles</Filter>
+    </Image>
+    <Image Include="..\..\DRONE\OBSTACLES\WaterObstacle2.png">
+      <Filter>Source Files\Sprites\Obstacles</Filter>
+    </Image>
+    <Image Include="..\..\DRONE\OBSTACLES\WaterObstacle3.png">
+      <Filter>Source Files\Sprites\Obstacles</Filter>
+    </Image>
   </ItemGroup>
 </Project>

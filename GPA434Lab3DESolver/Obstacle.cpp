@@ -1,8 +1,8 @@
 #include <Obstacle.h>
 
 
-Obstacle::Obstacle(double x, double y, double radius, std::string spritePath, double weight)
-    : SpriteObject(x, y, radius, spritePath)
+Obstacle::Obstacle(QPointF position, double radius, std::string spritePath, double weight)
+    : SpriteObject(position, radius, spritePath)
     , mWeight{ weight }
 {
 

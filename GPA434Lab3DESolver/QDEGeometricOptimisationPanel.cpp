@@ -1,4 +1,4 @@
-#include "QDEGeometricOptimisationPanel.h"
+Ôªø#include "QDEGeometricOptimisationPanel.h"
 
 #include "QImageViewer.h"
 
@@ -12,6 +12,7 @@
 #include <QRandomGenerator>
 #include <QtMath> /// COULD REMOVE
 #include <QTimer>
+#include <QPainterPath>
 
 
 QDEGeometricOptimisationPanel::QDEGeometricOptimisationPanel(QWidget* parent)
@@ -29,14 +30,14 @@ QDEGeometricOptimisationPanel::QDEGeometricOptimisationPanel(QWidget* parent)
     , mCurrentPolygon{ nullptr }
 {
     // Create the 'input parameters' group box and its contents
-    QGroupBox* parameterGroupBox{ new QGroupBox("ParamËtres") };
-    QFormLayout* parameterLayout{ new QFormLayout(parameterGroupBox)};
+    QGroupBox* parameterGroupBox{ new QGroupBox("D√©finitien des param√®tres") };
+    QFormLayout* parameterLayout{ new QFormLayout(parameterGroupBox) };
 
     // 
     QHBoxLayout* obstaclesLayout{ new QHBoxLayout };
     obstaclesLayout->addWidget(buildScrollBarWidget(mObstacleScrollBar, 0, 360, 120, " "));
     //QPushButton* regenerateButton{ new QPushButton("Regenerer") };
-    regenerateButton->setText(QString("Regenerer"));
+    regenerateButton->setText(QString("Reg√©n√©rer"));
     obstaclesLayout->addWidget(regenerateButton);
     parameterLayout->addRow("Nombre d'obstacles", obstaclesLayout);
 
@@ -49,7 +50,7 @@ QDEGeometricOptimisationPanel::QDEGeometricOptimisationPanel(QWidget* parent)
     QHBoxLayout* shapeLayout{ new QHBoxLayout };
     shapeLayout->addWidget(mShapeComboBox);
     shapeLayout->addWidget(vertexRow);
-    parameterLayout->addRow("Forme geometrique", shapeLayout);
+    parameterLayout->addRow("Forme g√©om√©trique", shapeLayout);
 
 
 
@@ -69,20 +70,15 @@ QDEGeometricOptimisationPanel::QDEGeometricOptimisationPanel(QWidget* parent)
     // --------------------------------------------------------------
     establishConnections();
 
+    QTimer::singleShot(0, this,
+        [this]()
+        {
+            updateCanvasRect();
+            regenerateObstacles();
+            updateSelectedPolygon();
+            emit parameterChanged();
+        });
 
-    // Initialisation differ?e pour avoir la taille finale du canevas
-    // "Run this code after the event loop returns, once the layout has been applied and the widget has a valid size."
-    //QTimer::singleShot(0, this, 
-    //    [this]()
-    //    {
-    //        updateCanvasRect();
-    //        //regenerateObstacles();
-    //        updateSelectedPolygon();
-    //    });
-
-    updateCanvasRect();
-    regenerateObstacles();
-    updateSelectedPolygon();
 }
 
 
@@ -105,7 +101,7 @@ QWidget* QDEGeometricOptimisationPanel::buildScrollBarWidget(
     QScrollBar*& sb, int minValue, int maxValue, int defValue, QString const& suffix)
 {
     QWidget* widget = new QWidget();
-    QHBoxLayout* layout{ new QHBoxLayout(widget)};
+    QHBoxLayout* layout{ new QHBoxLayout(widget) };
 
     sb->setOrientation(Qt::Horizontal);
     sb->setRange(minValue, maxValue);
@@ -120,8 +116,8 @@ QWidget* QDEGeometricOptimisationPanel::buildScrollBarWidget(
     layout->addWidget(label);
 
     label->setText(QString::number(sb->value()) + suffix);// Init
-    
-    // value envoyÈe par le signal valueChanged
+
+    // value envoy√©e par le signal valueChanged
     connect(sb, &QScrollBar::valueChanged, label,
         [=](int value) {label->setText(QString::number(value) + suffix); });
 
@@ -131,26 +127,43 @@ QWidget* QDEGeometricOptimisationPanel::buildScrollBarWidget(
 
 void QDEGeometricOptimisationPanel::establishConnections()
 {
-    //connect(mObstacleScrollBar, &QScrollBar::valueChanged, this, &QDESolutionPanel::parameterChanged);
-    connect(mVertexScrollBar, &QScrollBar::valueChanged, this, &QDESolutionPanel::parameterChanged);
-    connect(mShapeComboBox, &QComboBox::currentIndexChanged, this, &QDESolutionPanel::parameterChanged);
+    connect(mVertexScrollBar, &QScrollBar::valueChanged,
+        this, &QDESolutionPanel::parameterChanged);
+    connect(mShapeComboBox, &QComboBox::currentIndexChanged,
+        this, &QDESolutionPanel::parameterChanged);
 
-    // Obstacles : ne se regenerent que sur clic du bouton
-    connect(regenerateButton, &QPushButton::clicked, this, &QDEGeometricOptimisationPanel::regenerateObstacles);
 
-    // Polygones : se reconstruisent lorsque le nombre de sommets ou le type change
-    connect(mVertexScrollBar, &QScrollBar::valueChanged, this, &QDEGeometricOptimisationPanel::updateSelectedPolygon);
-    connect(mShapeComboBox, &QComboBox::currentIndexChanged, this, &QDEGeometricOptimisationPanel::updateSelectedPolygon);
-
-    // Redessiner automatiquement lorsque le canevas est redimensionn?
-    connect(mVisualizationLabel, &QImageViewer::resized, this, 
+    connect(regenerateButton, &QPushButton::clicked, this,
         [this]()
         {
-            updateCanvasRect();
             regenerateObstacles();
+            emit parameterChanged();
+        });
+
+    connect(mVertexScrollBar, &QScrollBar::valueChanged,
+        this, &QDEGeometricOptimisationPanel::updateSelectedPolygon);
+    connect(mShapeComboBox, &QComboBox::currentIndexChanged,
+        this, &QDEGeometricOptimisationPanel::updateSelectedPolygon);
+
+    connect(mVisualizationLabel, &QImageViewer::resized, this,
+        [this]()
+        {
+            constexpr double kAspect = 4.0;
+            int h = int(mVisualizationLabel->width() / kAspect);
+            if (mVisualizationLabel->height() != h) mVisualizationLabel->setFixedHeight(h);
+
+            updateCanvasRect();
             drawPreview();
         });
+
+    connect(mObstacleScrollBar, &QScrollBar::valueChanged, this,
+        [this](int)
+        {
+            regenerateObstacles();
+            emit parameterChanged();
+        });
 }
+
 
 
 
@@ -172,9 +185,9 @@ void QDEGeometricOptimisationPanel::updateCanvasRect()
 QDEGeometricOptimisationPanel::polygoneMode QDEGeometricOptimisationPanel::currentShapeKind() const
 {
     switch (mShapeComboBox->currentIndex()) {
-        case 1:  return polygoneMode::Convex;
-        case 2:  return polygoneMode::Star;
-        default: return polygoneMode::Regular;
+    case 1:  return polygoneMode::Convex;
+    case 2:  return polygoneMode::Star;
+    default: return polygoneMode::Regular;
     }
 }
 
@@ -202,7 +215,7 @@ void QDEGeometricOptimisationPanel::updateSelectedPolygon()
 {
     polygoneMode polygonType = currentShapeKind();
     const int vertexSize = vertexCount();
-    
+
     switch (polygonType)
     {
     case polygoneMode::Convex:
@@ -211,7 +224,7 @@ void QDEGeometricOptimisationPanel::updateSelectedPolygon()
     case polygoneMode::Star:
         mCurrentPolygon = std::unique_ptr<Polygon>(new StarPolygon(vertexSize, mShapeFillColor, mShapeEdgeColor));
         break;
-    default: 
+    default:
         mCurrentPolygon = std::unique_ptr<Polygon>(new RegularPolygon(vertexSize, mShapeFillColor, mShapeEdgeColor));
         break;
     }
@@ -225,19 +238,19 @@ void QDEGeometricOptimisationPanel::renderScene(DrawMode mode, const QDEAdapter*
     if (!mCurrentPolygon)
         return;   // or drawPreview();
 
-    // Assure que le rectangle du canevas reflËte la vraie taille actuelle du widget
+    // Assure que le rectangle du canevas refl√®te la vraie taille actuelle du widget
     updateCanvasRect();
 
-    // Calcul de la taille de líimage dans laquelle on va dessiner
+    // Calcul de la taille de l‚Äôimage dans laquelle on va dessiner
     const QSize size = mCanvasRect.size().toSize();
-    if (!size.isValid()) 
+    if (!size.isValid())
         return;
 
-    // Pixmap est l'image temporaire en mÈmoire, sur laquelle tout sera dessinÈ
+    // Pixmap est l'image temporaire en m√©moire, sur laquelle tout sera dessin√©
     QPixmap pixmap(size);
     pixmap.fill(mCanvasColor);
 
-    // QPainter est líoutil principal de dessin
+    // QPainter est l‚Äôoutil principal de dessin
     QPainter painter(&pixmap);
     painter.setRenderHint(QPainter::Antialiasing, true);
 
@@ -251,9 +264,9 @@ void QDEGeometricOptimisationPanel::renderScene(DrawMode mode, const QDEAdapter*
 
     // --- Dessin du polygone statique ---
     if (mode == DrawMode::Preview && !mBasePolygon.isEmpty()) {
-        painter.save(); // sauvegarde líÈtat (position, rotation, scaleÖ)
+        painter.save(); // sauvegarde l‚Äô√©tat (position, rotation, scale‚Ä¶)
 
-        // On dessine le polygone centrÈ
+        // On dessine le polygone centr√©
         painter.translate(mCanvasRect.center());
 
         painter.setBrush(mShapeFillColor);
@@ -268,7 +281,7 @@ void QDEGeometricOptimisationPanel::renderScene(DrawMode mode, const QDEAdapter*
         painter.scale(scale, scale);
         painter.drawPolygon(mBasePolygon);
 
-        painter.restore(); // revient ‡ líÈtat prÈcÈdant le translate+scale
+        painter.restore(); // revient √† l‚Äô√©tat pr√©c√©dant le translate+scale
     }
 
     // Dessin de la simulation 
@@ -298,9 +311,8 @@ void QDEGeometricOptimisationPanel::renderScene(DrawMode mode, const QDEAdapter*
                 painter.setPen(bestPen);
             }
             else {
-                // Les autres solutions  contour en pointillÈs
                 painter.setBrush(Qt::NoBrush);
-                QPen pen(mShapeEdgeColor, 1.0, Qt::DashLine);
+                QPen pen(QColor(180, 180, 180, 60), 1.0, Qt::SolidLine);
                 pen.setCosmetic(true);
                 painter.setPen(pen);
             }
@@ -320,15 +332,13 @@ void QDEGeometricOptimisationPanel::drawPreview()
 
 void QDEGeometricOptimisationPanel::updateVisualization(QDEAdapter const& de)
 {
+    if (de.currentGeneration() == 0) {
+        drawPreview();
+        return;
+    }
+
     renderScene(DrawMode::Simulation, &de);
 }
-
-
-
-
-
-
-
 
 
 
@@ -345,37 +355,21 @@ de::SolutionStrategy* QDEGeometricOptimisationPanel::buildSolution() const
 
 
 
-
-
-
 #include <OptimizationMaximization.h>
 #include <FitnessIdentity.h>
 #include <format>
 
-// Pour de::SolutionStrategy
-static const std::string gopTitle{ "Optimisation gÈomÈtrique" };
-static const std::string gopSummary{ "<p>Ce probleme consiste a determiner les parametres de transformation affine afin qu'une forme maximise sa taille sans depasser le canevas ou englober un obstacle.</p>" };
-static const std::string gop_description{ "<p>DESCRIPTION.</p>" };
+static const std::string gopTitle("Maximisation de forme");
+static const std::string gopSummary("<p>Ce probleme consiste a determiner les parametres de transformation affine afin qu'une forme maximise sa taille sans depasser le canevas ou englober un obstacle.</p>");
+static const std::string gop_description(R".(<p>La solution est representee dans un espace a quatre dimensions, o√π chaque composante correspond √† un param√®tre de transformation affine :</p><ul><li>x : d√©placement horizontal;</li><li>y : d√©placement vertical;</li><li>angle : rotation en degr√©s;</li><li>s : facteur d'√©chelle uniforme.</li></ul><p>La fonction objective utilise directement la valeur de s. Une p√©nalit√© n√©gative est appliqu√©e lorsqu'une transformation entra√Æne un d√©passement du canevas ou recouvre un obstacle.</p>).");
 
 const QString QDEGeometricOptimisationPanel::gop_description =
-QStringLiteral(
-    "<p>La solution est representee dans un espace Ö quatre dimensions, oó "
-    "chaque composante correspond Ö un paramätre de transformation affine :</p>"
-    "<ul>"
-    "<li>x : dÇplacement horizontal;</li>"
-    "<li>y : dÇplacement vertical;</li>"
-    "<li>angle : rotation en degrÇs;</li>"
-    "<li>s : facteur d?Çchelle uniforme.</li>"
-    "</ul>"
-    "<p>La fonction objective utilise directement la valeur de s. "
-    "Une pÇnalitÇ nÇgative est appliquÇe lorsqu?une transformation entraåne "
-    "un dÇpassement du canevas ou recouvre un obstacle.</p>"
-);
+QString::fromUtf8(R".(<p>La solution est representee dans un espace a quatre dimensions, o√π chaque composante correspond √† un param√®tre de transformation affine :</p><ul><li>x : d√©placement horizontal;</li><li>y : d√©placement vertical;</li><li>angle : rotation en degr√©s;</li><li>s : facteur d'√©chelle uniforme.</li></ul><p>La fonction objective utilise directement la valeur de s. Une p√©nalit√© n√©gative est appliqu√©e lorsqu'une transformation entra√Æne un d√©passement du canevas ou recouvre un obstacle.</p>).");
 
 
 
-QDEGeometricOptimisationPanel::geometricOptimisationStrategy::geometricOptimisationStrategy 
-    (const QRectF& canvas, const QList<QPointF>& obstacles, const QPolygonF& basePolygon) 
+QDEGeometricOptimisationPanel::geometricOptimisationStrategy::geometricOptimisationStrategy
+(const QRectF& canvas, const QList<QPointF>& obstacles, const QPolygonF& basePolygon)
     : de::SolutionStrategy(
         gopTitle,
         gopSummary,
@@ -410,15 +404,18 @@ double QDEGeometricOptimisationPanel::geometricOptimisationStrategy::process(
 
     QPolygonF transformed = tr.map(mBasePolygon);
 
-    // transformed.boundingRect() = Boite qui contient le polygone
     // Polygone dans la zone affichable
-    for (const QPointF& pt : transformed)
-        if (!mCanvas.contains(pt))
-            return -s;
+    if (!mCanvas.contains(transformed.boundingRect()))
+        return -s;
 
-    
-    // Polygone ne se positionne pas sur un obstacle
-    for (const QPointF& p : mObstacles) {
+    // Obstacles trait√©s comme des points : un obstacle est interdit seulement s'il est √† l'int√©rieur du polygone
+    QRectF const br = transformed.boundingRect(); // Filtre rapide avant containsPoint()
+
+    for (QPointF const& p : mObstacles)
+    {
+        if (!br.contains(p))
+            continue;
+
         if (transformed.containsPoint(p, Qt::OddEvenFill))
             return -s;
     }

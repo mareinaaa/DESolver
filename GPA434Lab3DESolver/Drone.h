@@ -10,30 +10,34 @@ class Obstacle;
 class Drone : public SpriteObject
 {
 public:
-    virtual ~Drone() = default;
+    ~Drone() = default;
 
-    // Cost between two slices
-    double segmentCost(
-        double x0, double y0,
-        double x1, double y1,
-        const std::vector<std::shared_ptr<Obstacle>>& obstacles
-    ) const;
+    // Identité (utile UI / debug)
+    QString name() const;
 
-    double weight() const;
+    // Génère la trajectoire réelle à partir des points de contrôle
+    virtual void buildPath(QVector<QPointF> const& controlPoints,
+        QVector<QPointF>& pathPoints) const = 0;
+
 
 protected:
-    Drone(double x, double y, double radius, std::string spritePath, double weight);
+    Drone(QPointF position, double radius, std::string spritePath, QString name);
 
 private:
-    double mWeight;
+    QString mName;
 };
 
 
 
 
-class AirDrone : public Drone
-{
-public:
-    AirDrone();
-    ~AirDrone() override = default;
-};
+//class AirDrone : public Drone
+//{
+//public:
+//    AirDrone(QPointF position, double radius, std::string spritePath, QString name);
+//    ~AirDrone() override = default;
+//
+//    void buildPath(QVector<QPointF> const& controlPoints,
+//        QVector<QPointF>& pathPoints) const override;
+//
+//
+//};
