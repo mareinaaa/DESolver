@@ -1,8 +1,6 @@
 #pragma once
 #include <vector>
-
 #include <QPointF>
-
 #include <string>
 
 class SpriteObject
